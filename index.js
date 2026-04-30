@@ -280,6 +280,22 @@ function renderIndexView() {
   });
 
   app.appendChild(container);
+
+  // --- collapse all button ---
+const collapseWrapper = document.createElement("div");
+collapseWrapper.className = "collapse-wrapper";
+
+const collapseBtn = document.createElement("button");
+collapseBtn.textContent = "Collapse All";
+
+collapseBtn.onclick = () => {
+  document.querySelectorAll(".index-details").forEach(el => {
+    el.classList.add("hidden");
+  });
+};
+
+collapseWrapper.appendChild(collapseBtn);
+app.appendChild(collapseWrapper);
 }
 
 // ---------------- CONTROLS ----------------

@@ -113,6 +113,31 @@ h1 {
   display: none;
 }
 
+.collapse-wrapper {
+  display: flex;
+  justify-content: left;
+  align-items: left;
+  gap: 10px;
+
+  margin: 2px auto 20px auto;
+  padding: 10px 0px;
+
+  width: 100%;
+}
+
+.collapse-wrapper button {
+  padding: 5px;
+  background-color: #ffffff;
+  border-width: 0rem;
+  border-color:transparent;
+  padding: 10px 15px;
+  font-size: 0.8rem;
+}
+
+.collapse-wrapper button:hover {
+  background-color: #e7e7e7;
+}
+
 
 /* NEW SECTION FOR CONTROL PANEL */
 /* subtitle row */
@@ -222,3 +247,4 @@ h1 {
 .index-details.hidden {
   display: none;
 }
+
