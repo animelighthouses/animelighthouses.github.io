@@ -176,7 +176,6 @@ function renderPage() {
     }
 
     // LIGHTHOUSE block
-
     if (entry.lighthouse_type === "real" && entry.lighthouses) {
       const lighthouseBlock = document.createElement("div");
       lighthouseBlock.className = "lighthouse-block";
@@ -242,7 +241,7 @@ function renderPage() {
 
 
       card.appendChild(lighthouseBlock);
-    }
+   } 
 
     app.appendChild(card);
   });

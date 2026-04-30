@@ -96,6 +96,7 @@ function buildFullCard(entry) {
   const card = document.createElement("div");
   card.className = "card";
 
+  // DATE
   const date = document.createElement("div");
   date.textContent = new Date(entry.date_spotted).toLocaleDateString("en-GB", {
     day: "numeric",
@@ -104,6 +105,7 @@ function buildFullCard(entry) {
   });
   card.appendChild(date);
 
+  // IMAGE
   if (entry.image_link?.length) {
     const img = document.createElement("img");
     img.className = "cardimg";
@@ -111,26 +113,119 @@ function buildFullCard(entry) {
     card.appendChild(img);
   }
 
+  // NAME
   const name = document.createElement("div");
   name.className = "title";
   name.textContent = entry[titleMode] || entry.title_en;
   card.appendChild(name);
 
-  if (entry.lighthouse_type === "real" && entry.lighthouses) {
-    const block = document.createElement("div");
-    block.className = "lighthouse-block";
+  // EPISODE
+  if (entry.episode || entry.timestamp || entry.anilist_link) {
+    const ep = document.createElement("div");
+    ep.className = "meta-row";
 
-    const strong = document.createElement("strong");
-    strong.textContent =
-      entry.lighthouses.name_en +
-      " (" +
-      entry.lighthouses.name_jp +
-      ")";
-    block.appendChild(strong);
+    // --- Episode text ---
+    if (entry.episode || entry.timestamp) {
+      const epText = document.createElement("span");
 
-    card.appendChild(block);
+      epText.textContent =
+        `${entry.episode ?? "—"}` +
+        (entry.timestamp ? ` / ${entry.timestamp}` : "");
+
+      ep.appendChild(epText);
+    }
+
+    // --- Dot separator (only if both exist) ---
+    if ((entry.episode || entry.timestamp) && entry.anilist_link) {
+      const dot = document.createElement("span");
+      dot.textContent = " • ";
+      dot.className = "dot-sep";
+      ep.appendChild(dot);
+    }
+
+    // --- AniList link ---
+    if (entry.anilist_link) {
+      ep.appendChild(
+        createLink(
+          "AniList",
+          entry.anilist_link,
+          "images/favicon-al.png"
+        )
+      );
+    }
+
+    card.appendChild(ep);
   }
 
+
+
+  // LIGHTHOUSE block
+  if (entry.lighthouse_type === "real" && entry.lighthouses) {
+    const lighthouseBlock = document.createElement("div");
+    lighthouseBlock.className = "lighthouse-block";
+
+    // --- Title line ---
+    const title = document.createElement("div");
+
+    const label = document.createElement("span");
+
+    const name = document.createElement("strong");
+    name.textContent = entry.lighthouses.name_en + ' (' + entry.lighthouses.name_jp + ')';
+
+    title.appendChild(label);
+    title.appendChild(name);
+
+    lighthouseBlock.appendChild(title);
+
+    // --- Location (prefecture) ---
+    if (entry.lighthouses.prefecture) {
+      const location = document.createElement("div");
+
+      const text = document.createElement("span");
+      text.textContent = "📌 " + entry.lighthouses.prefecture;
+
+      location.appendChild(text);
+
+      // add Maps link next to it
+      if (entry.lighthouses.google_maps_link) {
+        const mapLink = createLink(
+          "Maps",
+          entry.lighthouses.google_maps_link,
+          "images/favicon-map.png"
+        );
+
+        mapLink.style.marginLeft = "10px"; // small spacing
+        location.appendChild(mapLink);
+      }
+
+      lighthouseBlock.appendChild(location);
+    }
+
+    // --- Links ---
+    const links = document.createElement("div");
+
+    if (entry.lighthouses.wiki_en) {
+      links.appendChild(
+        createLink("Wikipedia (EN)", entry.lighthouses.wiki_en, "images/favicon-wiki.png")
+      );
+    }
+
+    if (entry.lighthouses.wiki_jp) {
+      links.appendChild(
+        createLink("Wikipedia (JP)", entry.lighthouses.wiki_jp, "images/favicon-wiki.png")
+      );
+    }
+
+    if (entry.lighthouses.lighthouse_japan_link) {
+      links.appendChild(
+        createLink("Lighthouse-JAPAN.com", entry.lighthouses.lighthouse_japan_link, "images/favicon-lj.png")
+      );
+    }
+    lighthouseBlock.appendChild(links);
+
+
+    card.appendChild(lighthouseBlock);
+  }
   return card;
 }
 
