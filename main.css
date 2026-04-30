@@ -1,15 +1,9 @@
-/* -------------------------
-   Reset / base
---------------------------*/
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-/* -------------------------
-   Page base
---------------------------*/
 body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   line-height: 1.5;
@@ -17,30 +11,24 @@ body {
   color: #222;
 }
 
-/* -------------------------
-   Layout container
---------------------------*/
 .container {
   max-width: 700px;
   margin: 0 auto;
   padding: 20px;
 }
 
-/* -------------------------
-   Header
---------------------------*/
 header {
   margin-bottom: 20px;
 }
 
 h1 {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   margin-bottom: 5px;
 }
 
 .subtitle {
   color: #666;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 
 /* -------------------------
@@ -54,24 +42,12 @@ h1 {
   /* box-shadow: 0 1px 4px rgba(0,0,0,0.08); */
 }
 
-/* -------------------------
-   Images
---------------------------*/
 .cardimg {
   max-width: 100%;
   border-radius: 6px;
   margin-top: 10px;
   margin-bottom: 10px;
   display: block;
-}
-
-/* -------------------------
-   Metadata text
---------------------------*/
-.meta {
-  font-size: 0.85rem;
-  color: #666;
-  margin-bottom: 6px;
 }
 
 .title {
@@ -97,22 +73,152 @@ h1 {
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
-  gap: 0px; /* spacing between icon and text */
+  gap: 0px;
+  /* spacing between icon and text */
 }
 
-.link-item:hover {
-  text-decoration: underline;
-}
-
+/* PAGINATION */
 
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 
-  margin: 24px auto 40px auto;
-  padding: 10px 0;
+  margin: 2px auto 20px auto;
+  padding: 10px 10px;
 
   width: 100%;
+}
+
+.pagination button {
+  padding: 5px;
+  background-color: #ffffff;
+  border-width: 0rem;
+  border-color:transparent;
+  padding: 10px 15px;
+  font-size: 1rem;
+}
+
+.pagination button:hover {
+  background-color: #e7e7e7;
+}
+
+.pagination button:disabled {
+  opacity: 0;
+  pointer-events: none; /* prevents invisible clicks */
+}
+
+.pagination.hidden {
+  display: none;
+}
+
+
+/* NEW SECTION FOR CONTROL PANEL */
+/* subtitle row */
+.subtitle-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* burger button */
+.burger {
+  font-size: 1.4rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: black;
+}
+
+/* filter panel */
+.filter-panel {
+  margin-top: 12px;
+  padding: 14px;
+
+  border: 1px solid #eee;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+/* hidden state */
+.hidden {
+  display: none;
+}
+
+/* spacing between sections */
+.panel-section {
+  margin-bottom: 16px;
+}
+
+/* section headers */
+.panel-header {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0px;
+  margin-top: 1.5rem;
+  opacity: 0.7;
+}
+
+/* search input */
+.search-input {
+  width: 100%;
+  font-size: 1rem; /* 👈 key for mobile */
+  padding: 8px 10px;
+
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+/* control block */
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 0.5rem;
+}
+
+/* dropdown */
+.control select {
+  font-size: 0.95rem;
+  padding: 6px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 0px;
+}
+
+.checkbox-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 0px;
+}
+
+/* Views */
+.view-link {
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.view-link.active {
+  opacity: 1;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.index-row {
+  border-bottom: 1px solid #eee;
+  padding: 8px 0;
+}
+
+.index-title {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.index-details.hidden {
+  display: none;
 }
