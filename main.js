@@ -237,11 +237,28 @@ function renderPage() {
           createLink("Lighthouse-JAPAN.com", entry.lighthouses.lighthouse_japan_link, "images/favicon-lj.png")
         );
       }
+      
       lighthouseBlock.appendChild(links);
-
-
       card.appendChild(lighthouseBlock);
    } 
+
+   // --- Notes ---
+if (entry.notes) {
+  const notesDiv = document.createElement("div");
+  notesDiv.className = "notes";
+
+  const label = document.createElement("strong");
+  label.textContent = "Notes: ";
+
+  const text = document.createElement("span");
+  text.textContent = entry.notes;
+
+  notesDiv.appendChild(label);
+  notesDiv.appendChild(text);
+
+  card.appendChild(notesDiv); // ✅ attach to card
+}
+   
 
     app.appendChild(card);
   });
