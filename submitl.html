@@ -78,15 +78,26 @@
             function disableForm() {
                 form.style.opacity = 0.5
                 form.style.pointerEvents = "none"
+
+                loginBtn.disabled = false
+                loginBtn.textContent = "Login"
+                loginBtn.style.background = ""
+                loginBtn.style.color = ""
             }
 
             function enableForm() {
                 form.style.opacity = 1
                 form.style.pointerEvents = "auto"
+
+                loginBtn.disabled = true
+                loginBtn.textContent = "Logged in"
+                loginBtn.style.background = "#4caf50"
+                loginBtn.style.color = "white"
+                loginBtn.style.pointerEvents = "none"
             }
 
             // -------------------------
-            // FORM SUBMIT (placeholder for now)
+            // FORM SUBMIT
             // -------------------------
 
             form.addEventListener("submit", async (e) => {
