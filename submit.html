@@ -101,6 +101,13 @@
                     if (formData[k] === "") formData[k] = null
                 })
 
+                if (isReal.checked) {
+                    formData.lighthouse_type = "real"
+                } else {
+                    formData.lighthouse_type = "fictional"
+                    formData.lighthouse_id = null
+                }
+
                 if (formData.image_link) {
                     const filename = formData.image_link.trim()
 
