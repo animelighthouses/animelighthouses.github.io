@@ -1,7 +1,450 @@
 <!DOCTYPE html>
 <html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Submit a sighting</title>
+    <link rel="stylesheet" href="main.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const supabase = window.supabase.createClient(
+                "https://ogningqqgxhwkmozikmu.supabase.co",
+                "sb_publishable_Q9SEFHhKlsG05lL4dmrSqw_hwbvmEAB"
+            )
+
+            const form = document.getElementById("lighthouseForm")
+            const loginBtn = document.getElementById("loginBtn")
+            const resultDiv = document.getElementById("result")
+
+            // ---------------- AUTH ----------------
+
+            async function signInWithGithub() {
+                const { error } = await supabase.auth.signInWithOAuth({
+                    provider: "github",
+                    options: {
+                        redirectTo: window.location.href
+                    }
+                })
+
+                if (error) console.error(error)
+            }
+
+            loginBtn.addEventListener("click", signInWithGithub)
+
+            async function checkSession() {
+                await supabase.auth.exchangeCodeForSession(window.location.href)
+
+                const { data } = await supabase.auth.getSession()
+
+                if (data.session) {
+                    enableForm()
+                } else {
+                    enableForm()
+                }
+            }
+
+            checkSession()
+
+            function disableForm() {
+                form.style.opacity = 0.5
+                form.style.pointerEvents = "none"
+
+                loginBtn.disabled = false
+                loginBtn.textContent = "Login"
+                loginBtn.style.background = ""
+                loginBtn.style.color = ""
+            }
+
+            function enableForm() {
+                form.style.opacity = 1
+                form.style.pointerEvents = "auto"
+
+                loginBtn.disabled = true
+                loginBtn.textContent = "Logged in"
+                loginBtn.style.background = "#4caf50"
+                loginBtn.style.color = "white"
+                loginBtn.style.pointerEvents = "none"
+            }
+
+            const isReal = document.getElementById("isReal")
+            const lighthouseSection = document.getElementById("lighthouseSection")
+            const lighthouseSelect = document.getElementById("lighthouseSelect")
+
+            function updateTypeUI() {
+                if (isReal.checked) {
+                    lighthouseSection.style.display = "block"
+                } else {
+                    lighthouseSection.style.display = "none"
+                    lighthouseSelect.value = null
+                }
+            }
+
+            isReal.addEventListener("change", updateTypeUI)
+            updateTypeUI()
+
+            // ---------------- SUBMIT ----------------
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault()
+
+                resultDiv.style.display = "none"
+
+                const formData = Object.fromEntries(new FormData(form))
+
+                // CLEANUP
+                Object.keys(formData).forEach(k => {
+                    if (formData[k] === "") formData[k] = null
+                })
+
+                if (formData.image_link) {
+                    const filename = formData.image_link.trim()
+
+                    formData.image_link = [`images/${filename}`]
+                } else {
+                    formData.image_link = null
+                }
+
+                if (cachedMediaId) {
+                    formData.media_id = cachedMediaId
+                }
+
+                if (cachedMediaType) {
+                    formData.media_type = cachedMediaType
+                }
+
+                const { data, error } = await supabase
+                    .from("sightings")
+                    .insert([formData])
+                    .select("id")
+                    .single()
+
+                if (error) {
+                    resultDiv.textContent = "Error: " + error.message
+                    resultDiv.classList.add("error")
+                    resultDiv.style.display = "block"
+                    return
+                }
+
+                resultDiv.textContent = `Sighting added successfully. ID: ${data.id}`
+                resultDiv.classList.add("success")
+                resultDiv.style.display = "block"
+
+                form.reset()
+            })
+
+            async function loadLighthouses() {
+                const { data, error } = await supabase
+                    .from("lighthouses")
+                    .select("id, name_en")
+                    .order("name_en")
+
+                if (error) {
+                    console.error(error)
+                    return
+                }
+
+                lighthouseSelect.innerHTML = `<option value="">-- Select lighthouse --</option>`
+
+                data.forEach(l => {
+                    const opt = document.createElement("option")
+                    opt.value = l.id
+                    opt.textContent = l.name_en
+                    lighthouseSelect.appendChild(opt)
+                })
+            }
+
+            loadLighthouses()
+            const anilistInput = document.getElementById("anilistInput")
+            const fetchBtn = document.getElementById("anilistFetchBtn")
+
+            let cachedMediaId = null
+            let cachedMediaType = null
+
+            function parseAniListUrl(url) {
+                try {
+                    const match = url.match(/anilist\.co\/(anime|manga)\/(\d+)/)
+
+                    if (!match) return null
+
+                    return {
+                        type: match[1],
+                        id: match[2]
+                    }
+                } catch {
+                    return null
+                }
+            }
+
+            fetchBtn.addEventListener("click", async () => {
+                const url = anilistInput.value.trim()
+
+                const parsed = parseAniListUrl(url)
+
+                if (!parsed) {
+                    alert("Invalid AniList URL")
+                    return
+                }
+
+                const { id, type } = parsed
+
+                cachedMediaId = id
+                cachedMediaType = type
+
+                // AniList GraphQL query
+                const query = `
+    query ($id: Int) {
+      Media(id: $id) {
+        title {
+          romaji
+          english
+          native
+        }
+      }
+    }
+  `
+
+                try {
+                    const res = await fetch("https://graphql.anilist.co", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            query,
+                            variables: { id: Number(id) }
+                        })
+                    })
+
+                    const json = await res.json()
+
+                    const media = json.data.Media
+
+                    if (!media) {
+                        alert("AniList entry not found")
+                        return
+                    }
+
+                    const title_en = media.title.english || media.title.romaji
+                    const title_r = media.title.romaji
+                    const title_jp = media.title.native
+
+                    // autofill form
+                    form.querySelector('[name="title_en"]').value = title_en || ""
+                    form.querySelector('[name="title_r"]').value = title_r || ""
+                    form.querySelector('[name="title_jp"]').value = title_jp || ""
+
+                } catch (err) {
+                    console.error(err)
+                    alert("Failed to fetch AniList data")
+                }
+            })
+        })
+    </script>
+
+    <style>
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 0rem;
+            margin: 10px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            display: flex;
+
+        }
+
+        label {
+            font-size: 1rem;
+            margin-bottom: 0.2rem;
+            margin-top: 0.5rem;
+            color: #555;
+        }
+
+        input,
+        textarea,
+        select {
+            padding: 0.5rem;
+            min-height: 3rem;
+            font-size: 1rem;
+            border: solid;
+            border-width: 0.1rem;
+        }
+
+        textarea {
+            min-height: 6rem;
+            resize: vertical;
+        }
+
+        .section {
+            margin-top: 0rem;
+            padding-top: 1.5rem;
+        }
+
+        .submission-form-title {
+            font-weight: bold;
+            font-size: 1.5rem;
+            margin-bottom: 0rem;
+            padding-top: 1rem;
+        }
+
+        button {
+            padding: 0.6rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .result {
+            margin-top: 1.5rem;
+            padding: 0.75rem;
+            font-size: 0.95rem;
+            border: 0.1rem solid #ccc;
+            background: #f9f9f9;
+            display: none;
+        }
+
+        .result.success {
+            border-color: #4caf50;
+            background: #e8f5e9;
+        }
+
+        .result.error {
+            border-color: #f44336;
+            background: #ffebee;
+        }
+
+        .loginbutton {
+            font-size: 0.5rem;
+        }
+
+        .checkbox-field label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .checkbox-field input[type="checkbox"] {
+            width: 1.2rem;
+            height: 1.2rem;
+        }
+    </style>
+</head>
+
 <body>
-    <p>test</p>
+    <div class="container">
+        <header>
+            <h1>Submit</h1>
+            <div class="subtitle-bar">
+                <div class="subtitle">
+                    <span id="view-recent" class="view-link active">Sighting</span>
+
+                    •
+                    <span id="view-index" class="view-link"><a href="/submitl.html"
+                            style="text-decoration:none;color:grey;">Lighthouse</a></span>
+
+                </div>
+
+                <button id="loginBtn">Login</button>
+            </div>
+            <form id="lighthouseForm">
+
+                <div class="section">
+                    <div class="field">
+                        <label>Date spotted *</label>
+                        <input name="date_spotted" type="date" required />
+                    </div>
+
+                    <div class="field">
+                        <label>AniList link</label>
+
+                        <div style="display:flex; gap:0.5rem;">
+                            <input name="anilist_link" id="anilistInput" type="url" style="flex:1;" />
+                            <button type="button" id="anilistFetchBtn" style="min-height:3rem;">Fetch</button>
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="section">
+                    <div class="field">
+                        <label>English title</label>
+                        <input name="title_en" required />
+                    </div>
+
+                    <div class="field">
+                        <label>Romaji title</label>
+                        <input name="title_r" required />
+                    </div>
+
+                    <div class="field">
+                        <label>Japanese title</label>
+                        <input name="title_jp" />
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="field">
+                        <label>Episode</label>
+                        <input name="episode" />
+                    </div>
+
+                    <div class="field">
+                        <label>Timestamp</label>
+                        <input name="timestamp" />
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="field">
+                        <label>Image</label>
+                        <input name="image_link" />
+                    </div>
+
+                </div>
+
+                <div class="section">
+                    <div class="field checkbox-field">
+                        <label>
+                            <input type="checkbox" id="isReal">
+                            Real?
+                        </label>
+                    </div>
+                </div>
+
+                <div id="lighthouseSection">
+                    <div class="field">
+                        <label>Lighthouse</label>
+                        <select name="lighthouse_id" id="lighthouseSelect">
+                            <option value="">-- Select lighthouse --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="field">
+                        <label>Notes</label>
+                        <div class="field">
+                            <textarea name="notes"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin:2rem 0rem;">
+                    <button type="submit">Add Sighting</button>
+                </div>
+
+                <div id="result" class="result"></div>
+
+            </form>
+    </div>
 </body>
 
 </html>

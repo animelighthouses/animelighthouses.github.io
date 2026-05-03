@@ -19,7 +19,6 @@
                     "sb_publishable_Q9SEFHhKlsG05lL4dmrSqw_hwbvmEAB"
                 )
 
-                // ⭐ THIS IS THE IMPORTANT FIX
                 await supabase.auth.exchangeCodeForSession(window.location.href)
 
                 const { data } = await supabase.auth.getSession()
