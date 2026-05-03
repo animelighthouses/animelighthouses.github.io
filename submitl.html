@@ -62,6 +62,8 @@
             loginBtn.addEventListener("click", signInWithGithub)
 
             async function checkSession() {
+                await supabase.auth.exchangeCodeForSession(window.location.href)
+
                 const { data } = await supabase.auth.getSession()
 
                 if (data.session) {
