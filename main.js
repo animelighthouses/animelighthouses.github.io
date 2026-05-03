@@ -426,11 +426,7 @@ async function init() {
   titleSelect.value = titleMode;
 
   updateViewUI();
-  const { data, error } = await supabase
-  .from('sightings')
-  .select('*')
 
-console.log(data, error)
 }
 
 init();

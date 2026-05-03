@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="main.css" />
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -16,26 +17,25 @@ document.addEventListener("DOMContentLoaded", () => {
     "sb_publishable_Q9SEFHhKlsG05lL4dmrSqw_hwbvmEAB"
   )
 
+  const loginBtn = document.getElementById("loginBtn")
+  const form = document.getElementById("lighthouseForm")
+  const resultDiv = document.getElementById("result")
+
+  // -------------------------
+  // AUTH
+  // -------------------------
+
   async function signInWithGithub() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github"
     })
 
-    if (error) console.error(error)
+    if (error) {
+      console.error(error)
+    }
   }
 
-  document.getElementById("loginBtn")
-    .addEventListener("click", signInWithGithub)
-
-  function disableForm() {
-    document.getElementById("lighthouseForm").style.opacity = 0.5
-    document.getElementById("lighthouseForm").style.pointerEvents = "none"
-  }
-
-  function enableForm() {
-    document.getElementById("lighthouseForm").style.opacity = 1
-    document.getElementById("lighthouseForm").style.pointerEvents = "auto"
-  }
+  loginBtn.addEventListener("click", signInWithGithub)
 
   async function checkSession() {
     const { data } = await supabase.auth.getSession()
@@ -48,6 +48,32 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   checkSession()
+
+  function disableForm() {
+    form.style.opacity = 0.5
+    form.style.pointerEvents = "none"
+  }
+
+  function enableForm() {
+    form.style.opacity = 1
+    form.style.pointerEvents = "auto"
+  }
+
+  // -------------------------
+  // FORM SUBMIT (placeholder for now)
+  // -------------------------
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault()
+
+    resultDiv.style.display = "none"
+
+    const formData = Object.fromEntries(new FormData(form))
+
+    console.log("Form data ready:", formData)
+
+    // We will add supabase insert here next
+  })
 
 })
 </script>
