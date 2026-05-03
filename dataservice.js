@@ -9,6 +9,8 @@ export async function fetchSightings() {
       lighthouses (*)
     `)
     .order('id', { ascending: false });
+console.log(data, error)
+
 
   if (error) {
     console.error('Error fetching data:', error);

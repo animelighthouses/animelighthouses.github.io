@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Submit a lighthouse</title>
+    <link rel="stylesheet" href="main.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+document.addEventListener("DOMContentLoaded", () => {
+
+  const supabase = window.supabase.createClient(
+    "https://ogningqqgxhwkmozikmu.supabase.co",
+    "sb_publishable_Q9SEFHhKlsG05lL4dmrSqw_hwbvmEAB"
+  )
+
+  async function signInWithGithub() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "github"
+    })
+
+    if (error) console.error(error)
+  }
+
+  document.getElementById("loginBtn")
+    .addEventListener("click", signInWithGithub)
+
+  function disableForm() {
+    document.getElementById("lighthouseForm").style.opacity = 0.5
+    document.getElementById("lighthouseForm").style.pointerEvents = "none"
+  }
+
+  function enableForm() {
+    document.getElementById("lighthouseForm").style.opacity = 1
+    document.getElementById("lighthouseForm").style.pointerEvents = "auto"
+  }
+
+  async function checkSession() {
+    const { data } = await supabase.auth.getSession()
+
+    if (data.session) {
+      enableForm()
+    } else {
+      disableForm()
+    }
+  }
+
+  checkSession()
+
+})
+</script>
+
+    <style>
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 0rem;
+            margin: 10px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            display: flex;
+
+        }
+
+        label {
+            font-size: 1rem;
+            margin-bottom: 0.2rem;
+            margin-top: 0.5rem;
+            color: #555;
+        }
+
+        input,
+        textarea,
+        select {
+            padding: 0.5rem;
+            min-height: 3rem;
+            font-size: 1rem;
+            border: solid;
+            border-width: 0.1rem;
+        }
+
+        textarea {
+            min-height: 6rem;
+            resize: vertical;
+        }
+
+        .section {
+            margin-top: 0rem;
+            padding-top: 1.5rem;
+        }
+
+        .submission-form-title {
+            font-weight: bold;
+            font-size: 1.5rem;
+            margin-bottom: 0rem;
+            padding-top: 1rem;
+        }
+
+        button {
+            padding: 0.6rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .result {
+            margin-top: 1.5rem;
+            padding: 0.75rem;
+            font-size: 0.95rem;
+            border: 0.1rem solid #ccc;
+            background: #f9f9f9;
+            display: none;
+        }
+
+        .result.success {
+            border-color: #4caf50;
+            background: #e8f5e9;
+        }
+
+        .result.error {
+            border-color: #f44336;
+            background: #ffebee;
+        }
+
+        .loginbutton {
+            font-size: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Submit</h1>
+            <div class="subtitle-bar">
+                <div class="subtitle">
+                    <span id="view-index" class="view-link"><a href="/submit.html"
+                            style="text-decoration:none;color:grey;">Sighting</a></span>
+                    •
+                    <span id="view-recent" class="view-link active">Lighthouse</span>
+
+                </div>
+
+                <button id="loginBtn">Login</button>
+            </div>
+            <form id="lighthouseForm">
+
+                <div class="section">
+                    <div class="field">
+                        <label>English name *</label>
+                        <input name="name_en" required />
+                    </div>
+
+                    <div class="field">
+                        <label>Japanese name</label>
+                        <input name="name_jp" />
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="field">
+                        <label>Wikipedia (EN)</label>
+                        <input name="wiki_en" type="url" />
+                    </div>
+
+                    <div class="field">
+                        <label>Wikipedia (JP)</label>
+                        <input name="wiki_jp" type="url" />
+                    </div>
+
+                    <div class="field">
+                        <label>Google Maps</label>
+                        <input name="google_maps_link" type="url" />
+                    </div>
+
+                    <div class="section">
+
+                        <div class="field">
+                            <label>Lighthouse-JAPAN</label>
+                            <input name="lighthouse_japan_link" type="url" />
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>Prefecture</label>
+                        <select name="prefecture">
+                            <option value="">-- Select prefecture --</option>
+                            <option>Aichi</option>
+                            <option>Akita</option>
+                            <option>Aomori</option>
+                            <option>Chiba</option>
+                            <option>Ehime</option>
+                            <option>Fukui</option>
+                            <option>Fukuoka</option>
+                            <option>Fukushima</option>
+                            <option>Gifu</option>
+                            <option>Gunma</option>
+                            <option>Hiroshima</option>
+                            <option>Hokkaido</option>
+                            <option>Hyogo</option>
+                            <option>Ibaraki</option>
+                            <option>Ishikawa</option>
+                            <option>Iwate</option>
+                            <option>Kagawa</option>
+                            <option>Kagoshima</option>
+                            <option>Kanagawa</option>
+                            <option>Kochi</option>
+                            <option>Kumamoto</option>
+                            <option>Kyoto</option>
+                            <option>Mie</option>
+                            <option>Miyagi</option>
+                            <option>Miyazaki</option>
+                            <option>Nagasaki</option>
+                            <option>Nagano</option>
+                            <option>Niigata</option>
+                            <option>Oita</option>
+                            <option>Okayama</option>
+                            <option>Okinawa</option>
+                            <option>Osaka</option>
+                            <option>Saga</option>
+                            <option>Saitama</option>
+                            <option>Shiga</option>
+                            <option>Shimane</option>
+                            <option>Shizuoka</option>
+                            <option>Tochigi</option>
+                            <option>Tokushima</option>
+                            <option>Tokyo</option>
+                            <option>Tottori</option>
+                            <option>Toyama</option>
+                            <option>Wakayama</option>
+                            <option>Yamagata</option>
+                            <option>Yamaguchi</option>
+                            <option>Yamanashi</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="field">
+                        <label>Notes</label>
+                        <div class="field">
+                            <textarea name="notes_l"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin:2rem 0rem;">
+                    <button type="submit">Add Lighthouse</button>
+                </div>
+
+                <div id="result" class="result"></div>
+
+            </form>
+    </div>
+</body>
+
+</html>
