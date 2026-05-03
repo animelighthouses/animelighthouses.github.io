@@ -92,12 +92,35 @@
                 e.preventDefault()
 
                 resultDiv.style.display = "none"
+                resultDiv.className = "result"
 
                 const formData = Object.fromEntries(new FormData(form))
 
-                console.log("Form data ready:", formData)
+                // clean empty strings → null (important for DB cleanliness)
+                Object.keys(formData).forEach(key => {
+                    if (formData[key] === "") formData[key] = null
+                })
 
-                // We will add supabase insert here next
+                const { data, error } = await supabase
+                    .from("lighthouses")
+                    .insert([formData])
+                    .select("id")
+                    .single()
+
+                if (error) {
+                    resultDiv.textContent = "Error: " + error.message
+                    resultDiv.classList.add("error")
+                    resultDiv.style.display = "block"
+                    return
+                }
+
+                const id = data.id
+
+                resultDiv.textContent = `Lighthouse added successfully. ID: ${id}`
+                resultDiv.classList.add("success")
+                resultDiv.style.display = "block"
+
+                form.reset()
             })
 
         })
