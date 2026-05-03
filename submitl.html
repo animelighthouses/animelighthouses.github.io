@@ -12,6 +12,30 @@
     <script>
 document.addEventListener("DOMContentLoaded", () => {
 
+    document.addEventListener("DOMContentLoaded", async () => {
+
+  const supabase = window.supabase.createClient(
+    "https://ogningqqgxhwkmozikmu.supabase.co",
+    "sb_publishable_Q9SEFHhKlsG05lL4dmrSqw_hwbvmEAB"
+  )
+
+  // ⭐ THIS IS THE IMPORTANT FIX
+  await supabase.auth.exchangeCodeForSession(window.location.href)
+
+  const { data } = await supabase.auth.getSession()
+
+  const form = document.getElementById("lighthouseForm")
+
+  if (data.session) {
+    form.style.opacity = 1
+    form.style.pointerEvents = "auto"
+  } else {
+    form.style.opacity = 0.5
+    form.style.pointerEvents = "none"
+  }
+
+})
+
   const supabase = window.supabase.createClient(
     "https://ogningqqgxhwkmozikmu.supabase.co",
     "sb_publishable_Q9SEFHhKlsG05lL4dmrSqw_hwbvmEAB"
