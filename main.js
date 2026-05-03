@@ -3,7 +3,7 @@ import { fetchSightings } from "./dataservice.js";
 const app = document.getElementById("app");
 
 let currentPage = 0;
-const pageSize = 5;
+const pageSize = 10;
 let allData = [];
 
 let searchTerm = "";
