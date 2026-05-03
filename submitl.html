@@ -10,97 +10,98 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener("DOMContentLoaded", () => {
 
-    document.addEventListener("DOMContentLoaded", async () => {
+            document.addEventListener("DOMContentLoaded", async () => {
 
-  const supabase = window.supabase.createClient(
-    "https://ogningqqgxhwkmozikmu.supabase.co",
-    "sb_publishable_Q9SEFHhKlsG05lL4dmrSqw_hwbvmEAB"
-  )
+                const supabase = window.supabase.createClient(
+                    "https://ogningqqgxhwkmozikmu.supabase.co",
+                    "sb_publishable_Q9SEFHhKlsG05lL4dmrSqw_hwbvmEAB"
+                )
 
-  // ⭐ THIS IS THE IMPORTANT FIX
-  await supabase.auth.exchangeCodeForSession(window.location.href)
+                // ⭐ THIS IS THE IMPORTANT FIX
+                await supabase.auth.exchangeCodeForSession(window.location.href)
 
-  const { data } = await supabase.auth.getSession()
+                const { data } = await supabase.auth.getSession()
 
-  const form = document.getElementById("lighthouseForm")
+                const form = document.getElementById("lighthouseForm")
 
-  if (data.session) {
-    form.style.opacity = 1
-    form.style.pointerEvents = "auto"
-  } else {
-    form.style.opacity = 0.5
-    form.style.pointerEvents = "none"
-  }
+                if (data.session) {
+                    form.style.opacity = 1
+                    form.style.pointerEvents = "auto"
+                } else {
+                    form.style.opacity = 0.5
+                    form.style.pointerEvents = "none"
+                }
 
-})
+            })
 
-  const supabase = window.supabase.createClient(
-    "https://ogningqqgxhwkmozikmu.supabase.co",
-    "sb_publishable_Q9SEFHhKlsG05lL4dmrSqw_hwbvmEAB"
-  )
+            const supabase = window.supabase.createClient(
+                "https://ogningqqgxhwkmozikmu.supabase.co",
+                "sb_publishable_Q9SEFHhKlsG05lL4dmrSqw_hwbvmEAB"
+            )
 
-  const loginBtn = document.getElementById("loginBtn")
-  const form = document.getElementById("lighthouseForm")
-  const resultDiv = document.getElementById("result")
+            const loginBtn = document.getElementById("loginBtn")
+            const form = document.getElementById("lighthouseForm")
+            const resultDiv = document.getElementById("result")
 
-  // -------------------------
-  // AUTH
-  // -------------------------
+            // -------------------------
+            // AUTH
+            // -------------------------
 
-  async function signInWithGithub() {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "github"
-    })
+            async function signInWithGithub() {
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: "github",
+                    options: {
+                        redirectTo: window.location.href
+                    }
+                })
 
-    if (error) {
-      console.error(error)
-    }
-  }
+                if (error) console.error(error)
+            }
 
-  loginBtn.addEventListener("click", signInWithGithub)
+            loginBtn.addEventListener("click", signInWithGithub)
 
-  async function checkSession() {
-    const { data } = await supabase.auth.getSession()
+            async function checkSession() {
+                const { data } = await supabase.auth.getSession()
 
-    if (data.session) {
-      enableForm()
-    } else {
-      disableForm()
-    }
-  }
+                if (data.session) {
+                    enableForm()
+                } else {
+                    disableForm()
+                }
+            }
 
-  checkSession()
+            checkSession()
 
-  function disableForm() {
-    form.style.opacity = 0.5
-    form.style.pointerEvents = "none"
-  }
+            function disableForm() {
+                form.style.opacity = 0.5
+                form.style.pointerEvents = "none"
+            }
 
-  function enableForm() {
-    form.style.opacity = 1
-    form.style.pointerEvents = "auto"
-  }
+            function enableForm() {
+                form.style.opacity = 1
+                form.style.pointerEvents = "auto"
+            }
 
-  // -------------------------
-  // FORM SUBMIT (placeholder for now)
-  // -------------------------
+            // -------------------------
+            // FORM SUBMIT (placeholder for now)
+            // -------------------------
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault()
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault()
 
-    resultDiv.style.display = "none"
+                resultDiv.style.display = "none"
 
-    const formData = Object.fromEntries(new FormData(form))
+                const formData = Object.fromEntries(new FormData(form))
 
-    console.log("Form data ready:", formData)
+                console.log("Form data ready:", formData)
 
-    // We will add supabase insert here next
-  })
+                // We will add supabase insert here next
+            })
 
-})
-</script>
+        })
+    </script>
 
     <style>
         form {
