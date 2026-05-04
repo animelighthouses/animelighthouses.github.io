@@ -80,10 +80,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     applyPrefectureFromLighthouseJapanUrl(url, prefectureSelect);
   }
 
+  /* `input` fires after paste/typing with the new value; `change` only on blur */
+  lighthouseJapanInput?.addEventListener("input", onLighthouseJapanInput);
   lighthouseJapanInput?.addEventListener("change", onLighthouseJapanInput);
-  lighthouseJapanInput?.addEventListener("paste", () => {
-    requestAnimationFrame(onLighthouseJapanInput);
-  });
 
   form?.addEventListener("submit", async e => {
     e.preventDefault();
