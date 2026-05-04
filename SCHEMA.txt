@@ -1,0 +1,234 @@
+Database Schema (Authoritative)
+Project: Anime Lighthouse Index
+
+---
+
+1. Source of Truth
+
+This schema reflects the actual PostgreSQL database (Supabase).
+
+It distinguishes between:
+- Database-enforced constraints
+- Application-level assumptions (NOT enforced)
+
+---
+
+2. Table: lighthouses
+
+Purpose:
+Reference table for real-world lighthouses.
+
+Columns:
+
+- id
+  type: integer
+  constraints: PRIMARY KEY, GENERATED ALWAYS AS IDENTITY, NOT NULL
+
+- name_en
+  type: text
+  constraints: NULLABLE
+
+- name_jp
+  type: text
+  constraints: NULLABLE
+
+- wiki_en
+  type: text
+  constraints: NULLABLE
+
+- wiki_jp
+  type: text
+  constraints: NULLABLE
+
+- lighthouse_japan_link
+  type: text
+  constraints: NULLABLE
+
+- google_maps_link
+  type: text
+  constraints: NULLABLE
+
+- notes_l
+  type: text
+  constraints: NULLABLE
+
+- prefecture
+  type: text
+  constraints: NULLABLE
+
+---
+
+3. Table: sightings
+
+Purpose:
+Core dataset representing lighthouse appearances in media.
+
+Columns:
+
+- id
+  type: integer
+  constraints: PRIMARY KEY, GENERATED ALWAYS AS IDENTITY, NOT NULL
+
+- date_spotted
+  type: date
+  constraints: NOT NULL
+
+- title_en
+  type: text
+  constraints: NULLABLE
+
+- title_r
+  type: text
+  constraints: NULLABLE
+
+- title_jp
+  type: text
+  constraints: NULLABLE
+
+- media_id
+  type: text
+  constraints: NULLABLE
+
+- anilist_link
+  type: text
+  constraints: NULLABLE
+
+- episode
+  type: text
+  constraints: NULLABLE
+
+- timestamp
+  type: text
+  constraints: NULLABLE
+
+- lighthouse_id
+  type: integer
+  constraints:
+    - NULLABLE
+    - FOREIGN KEY → lighthouses.id
+
+- image_link
+  type: text[]
+  constraints: NULLABLE
+
+- lighthouse_type
+  type: enum (sighting_type)
+  constraints:
+    - NOT NULL
+    - DEFAULT 'fictional'
+
+- media_type
+  type: enum (media_type)
+  constraints:
+    - NOT NULL
+    - DEFAULT 'anime'
+
+- notes
+  type: text
+  constraints: NULLABLE
+
+---
+
+4. Enum Types
+
+4.1 sighting_type
+
+Allowed values:
+- 'real'
+- 'fictional'
+
+---
+
+4.2 media_type
+
+Allowed values:
+- 'anime'
+- 'manga'
+
+---
+
+5. Relationships
+
+- sightings.lighthouse_id → lighthouses.id
+
+Cardinality:
+- many sightings → one lighthouse
+
+Behaviour:
+- lighthouse_id may be NULL
+- no conditional constraint based on lighthouse_type
+
+---
+
+6. Database-Enforced Constraints (STRICT)
+
+The database guarantees:
+
+- id is unique and auto-generated
+- date_spotted is always present
+- lighthouse_type is always present
+- media_type is always present
+- lighthouse_id (if not null) must reference a valid lighthouse
+
+---
+
+7. NOT Enforced by Database (CRITICAL)
+
+The database DOES NOT enforce:
+
+- presence of titles (title_en, title_r, title_jp)
+- relationship between lighthouse_type and lighthouse_id
+- validity of image_link format
+- correctness of URLs
+- consistency between media_type and anilist_link
+
+---
+
+8. Application-Level Invariants (EXPECTED BUT NOT ENFORCED)
+
+These are required for correct behaviour but enforced in frontend:
+
+- lighthouse_type logic:
+  IF 'real'      → lighthouse_id MUST exist
+  IF 'fictional' → lighthouse_id MUST be NULL
+
+- titles:
+  title_r MUST exist
+  title_jp MUST exist
+  title_en MUST exist (fallback to romaji if needed)
+
+- image_link:
+  must be null OR array of strings
+  each string format: "images/<filename>"
+
+---
+
+9. API Representation Notes
+
+Supabase returns joined data using:
+
+select=*,lighthouses(*)
+
+Result:
+
+- "lighthouses" field:
+  - object when relation exists
+  - null or omitted when not
+
+Example of a full row returned by the Supabase api:
+
+{ "id": 31, "date_spotted": "2023-09-24", "title_en": "BOCCHI THE ROCK!", "title_r": "Bocchi the Rock!", "title_jp": "ぼっち・ざ・ろっく！", "media_id": "130003", "anilist_link": "https://anilist.co/anime/130003/", "episode": "S01E09", "timestamp": "00:16:12", "lighthouse_id": 5, "image_link": [ "images/2023-09-24.jpg" ], "lighthouse_type": "real", "media_type": "anime", "notes": null, "lighthouses": { "id": 5, "name_en": "Enoshima Sea Candle", "name_jp": "江の島灯台", "notes_l": "Also known as the Shonan Observatory Lighthouse. See also the old Enoshima Lighthouse that the Sea Cande replaced.", "wiki_en": "https://en.wikipedia.org/wiki/Enoshima_Sea_Candle", "wiki_jp": "https://ja.wikipedia.org/wiki/%E6%B1%9F%E3%81%AE%E5%B3%B6%E7%81%AF%E5%8F%B0", "prefecture": "Kanagawa", "google_maps_link": "https://maps.app.goo.gl/gQj5EpETGHCVrR1v6", "lighthouse_japan_link": "https://lighthouse-japan.com/kanagawa/enoshima/enoshima.html" } }
+
+---
+
+10. Design Philosophy
+
+Current schema is:
+
+- permissive
+- flexible
+- frontend-driven for validation
+
+This supports rapid iteration but relies on valid input.
+
+---

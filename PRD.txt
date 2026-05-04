@@ -1,0 +1,67 @@
+Product Requirements Document (PRD)
+Project: Anime Lighthouse Index
+
+---
+
+1. Overview
+
+Anime Lighthouse Index is a web application for cataloguing and browsing sightings of lighthouses in anime and manga.
+
+A "sighting" represents a specific instance of a lighthouse appearing in a piece of media (e.g. an episode or chapter).
+
+The system supports both:
+- Fictional lighthouses
+- Real-world lighthouses referenced in media
+
+---
+
+2. Core Features
+
+2.1 Browse Sightings (Recent View)
+- Displays sightings in reverse chronological order (default)
+- Pagination support
+
+2.2 Index View
+- Aggregated / grouped listing of sightings
+
+2.3 Search
+- Free-text search across titles
+
+2.4 Filters
+- Media type (anime / manga)
+- Real-only toggle
+
+2.5 Sorting
+- Newest, oldest, A–Z, Z–A
+
+2.6 Title Display Modes
+- English / Romaji / Japanese
+
+2.7 Submission System
+Forms for authenticated users (only me, the sole developer) to submit new real-world lighthouses and new sightings to the database.
+
+2.8 AniList Integration in the sightings form
+- Fetch media titles via GraphQL
+
+2.9 Authentication in the forms
+- GitHub OAuth via Supabase
+
+---
+
+3. Technical Stack
+
+- Frontend is hosted on Github pages (static site)
+- Backend Postgres database is hosted on Supabase
+
+- Vanilla JavaScript
+- Supabase
+- AniList API
+
+---
+
+4. Design Philosophy
+
+- Lightweight
+- Fast, responsive interface
+- Minimalist design
+- Simple code
