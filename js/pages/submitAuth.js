@@ -16,6 +16,14 @@ export async function signInWithGithub() {
   if (error) console.error(error);
 }
 
+function setFormControlsDisabled(form, disabled) {
+  if (!form?.elements) return;
+  Array.from(form.elements).forEach(el => {
+    // Only disable actual form controls (not fieldsets in some browsers)
+    if ("disabled" in el) el.disabled = disabled;
+  });
+}
+
 export async function setFormEnabledFromSession({ form, loginBtn }) {
   await exchangeCodeForSession();
   const { data } = await supabaseClient.auth.getSession();
@@ -26,6 +34,7 @@ export async function setFormEnabledFromSession({ form, loginBtn }) {
   if (hasSession) {
     form.style.opacity = 1;
     form.style.pointerEvents = "auto";
+    setFormControlsDisabled(form, false);
 
     loginBtn.disabled = true;
     loginBtn.textContent = "Logged in";
@@ -35,6 +44,7 @@ export async function setFormEnabledFromSession({ form, loginBtn }) {
   } else {
     form.style.opacity = 0.5;
     form.style.pointerEvents = "none";
+    setFormControlsDisabled(form, true);
 
     loginBtn.disabled = false;
     loginBtn.textContent = "Login";

@@ -19,6 +19,9 @@ function parseAniListUrl(url) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  // #region agent log
+  fetch('http://127.0.0.1:7410/ingest/c74d6243-8a68-4373-b13b-4c1a75b6873d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f7121d'},body:JSON.stringify({sessionId:'f7121d',runId:'pre-fix',hypothesisId:'H1',location:'js/pages/submit-sighting.js:DOMReady',message:'submit-sighting module started',data:{path:window.location.pathname},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
   initSubmitNav();
 
   const form = document.getElementById("lighthouseForm");
@@ -26,7 +29,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const resultDiv = document.getElementById("result");
 
   loginBtn?.addEventListener("click", signInWithGithub);
-  await setFormEnabledFromSession({ form, loginBtn });
+  const hasSession = await setFormEnabledFromSession({ form, loginBtn });
+  // #region agent log
+  fetch('http://127.0.0.1:7410/ingest/c74d6243-8a68-4373-b13b-4c1a75b6873d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f7121d'},body:JSON.stringify({sessionId:'f7121d',runId:'pre-fix',hypothesisId:'H2',location:'js/pages/submit-sighting.js:afterSession',message:'session gating applied',data:{hasSession,formFound:Boolean(form),loginBtnFound:Boolean(loginBtn)},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
 
   const isReal = document.getElementById("isReal");
   const lighthouseSection = document.getElementById("lighthouseSection");
@@ -117,9 +123,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       const title_r = media.title.romaji;
       const title_jp = media.title.native;
 
-      form?.querySelector('[name="title_en"]')?.value = title_en || "";
-      form?.querySelector('[name="title_r"]')?.value = title_r || "";
-      form?.querySelector('[name="title_jp"]')?.value = title_jp || "";
+      const titleEnEl = form?.querySelector('[name="title_en"]');
+      if (titleEnEl) titleEnEl.value = title_en || "";
+
+      const titleREl = form?.querySelector('[name="title_r"]');
+      if (titleREl) titleREl.value = title_r || "";
+
+      const titleJpEl = form?.querySelector('[name="title_jp"]');
+      if (titleJpEl) titleJpEl.value = title_jp || "";
     } catch (err) {
       console.error(err);
       alert("Failed to fetch AniList data");
