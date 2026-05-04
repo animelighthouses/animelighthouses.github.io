@@ -1,3 +1,13 @@
+/**
+ * Lighthouse (reference row) submission — submitl.html
+ *
+ * PRD:
+ * - 2.8: Insert into lighthouses table (real-world reference data)
+ * - 2.10: Same OAuth gating as sighting form
+ *
+ * Structure: helpers → DOMContentLoaded (nav, auth, submit handler)
+ */
+
 import supabaseClient from "../supabaseClient.js";
 import { initSubmitNav } from "../ui/nav.js";
 import { setFormEnabledFromSession, signInWithGithub } from "./submitAuth.js";
@@ -54,4 +64,3 @@ document.addEventListener("DOMContentLoaded", async () => {
     form.reset();
   });
 });
-

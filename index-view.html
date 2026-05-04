@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Index view: compact list + expand cards (PRD 2.3). Entry: /js/index.js -->
 <html lang="en">
 
 <head>
@@ -38,7 +39,7 @@
           <div class="panel-header">Options</div>
 
           <label class="control">
-            <span>Title language</span>
+            <span class="filter-dropdown-label">Title language</span>
             <select id="title-mode">
               <option value="title_en">English</option>
               <option value="title_r">Romaji</option>
@@ -47,7 +48,7 @@
           </label>
 
           <label class="control">
-            <span>Sort order</span>
+            <span class="filter-dropdown-label">Sort order</span>
 
             <select id="sort-mode">
               <option value="newest">Most recent first</option>
@@ -81,6 +82,13 @@
           <label class="checkbox">
             <input type="checkbox" id="real-only" />
             <span>Real lighthouses only</span>
+          </label>
+
+          <label class="control">
+            <span class="filter-dropdown-label">Lighthouse</span>
+            <select id="lighthouse-filter">
+              <option value="">All lighthouses</option>
+            </select>
           </label>
 
         </div>

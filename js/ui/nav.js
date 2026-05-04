@@ -1,3 +1,12 @@
+/**
+ * Tab highlight helpers (no routing framework).
+ *
+ * PRD 4: simple, utilitarian UI — active tab is CSS class .view-link.active
+ *
+ * - Browse: Recent vs Index (paths / and /index-view)
+ * - Submit: Sighting vs Lighthouse (paths containing submit / submitl)
+ */
+
 export function initViewNav() {
   const viewRecent = document.getElementById("view-recent");
   const viewIndex = document.getElementById("view-index");

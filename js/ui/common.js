@@ -1,3 +1,17 @@
+/**
+ * Shared UI for public browse pages (Recent + Index).
+ *
+ * PRD mapping:
+ * - 2.6: buildSightingCard title line uses titleMode (title_en | title_r | title_jp)
+ * - 2.4–2.5: filterAndSortSightings (search, media toggles, real-only, lighthouse)
+ * - 2.5: sort modes newest | oldest | az | za
+ * - 2.3: Index reuses buildSightingCard for expanded rows
+ *
+ * Section order: link helper → date → card DOM → search match → filter/sort pipeline → panel bindings
+ */
+
+// --- Link + date helpers ----------------------------------------------------
+
 export function createLink(text, url, iconSrc) {
   const a = document.createElement("a");
   a.href = url;
@@ -26,6 +40,8 @@ export function formatSpottedDate(dateSpotted) {
     year: "numeric"
   });
 }
+
+// --- Sighting card (single visual unit for Recent and Index expand) ----------
 
 export function buildSightingCard(entry, { titleMode }) {
   const card = document.createElement("div");
@@ -156,6 +172,8 @@ export function buildSightingCard(entry, { titleMode }) {
   return card;
 }
 
+// --- Client-side filter pipeline ----------------------------------------------
+
 function matchesSearch(entry, searchTerm) {
   if (!searchTerm) return true;
 
@@ -174,6 +192,7 @@ function matchesSearch(entry, searchTerm) {
   });
 }
 
+/** Sort then filter; returns a new array (does not mutate allData). */
 export function filterAndSortSightings(allData, state) {
   const processed = [...allData];
 
@@ -201,9 +220,76 @@ export function filterAndSortSightings(allData, state) {
 
     if (state.realOnly && entry.lighthouse_type !== "real") return false;
 
+    if (
+      state.lighthouseId != null &&
+      Number(entry.lighthouse_id) !== Number(state.lighthouseId)
+    ) {
+      return false;
+    }
+
     return true;
   });
 }
+
+/** Build #lighthouse-filter options from merged sighting rows (uses lighthouses join when present). */
+export function populateLighthouseFilter(allData, state) {
+  const sel = document.getElementById("lighthouse-filter");
+  if (!sel || !state) return;
+
+  const byId = new Map();
+  for (const row of allData) {
+    const lid = row.lighthouse_id;
+    if (lid == null || lid === "") continue;
+
+    const idNum = Number(lid);
+    if (Number.isNaN(idNum) || byId.has(idNum)) continue;
+
+    const name =
+      row.lighthouses?.name_en?.trim() ||
+      row.lighthouses?.name_jp?.trim() ||
+      `Lighthouse (${idNum})`;
+    byId.set(idNum, name);
+  }
+
+  const pairs = [...byId.entries()].sort((a, b) =>
+    a[1].localeCompare(b[1], undefined, { sensitivity: "base" })
+  );
+
+  sel.replaceChildren();
+
+  const allOpt = document.createElement("option");
+  allOpt.value = "";
+  allOpt.textContent = "All lighthouses";
+  sel.appendChild(allOpt);
+
+  for (const [idNum, label] of pairs) {
+    const opt = document.createElement("option");
+    opt.value = String(idNum);
+    opt.textContent = label;
+    sel.appendChild(opt);
+  }
+
+  const current = state.lighthouseId != null ? String(state.lighthouseId) : "";
+  if (current && [...byId.keys()].includes(Number(current))) sel.value = current;
+  else {
+    sel.value = "";
+    state.lighthouseId = null;
+  }
+}
+
+/** PRD 2.4: search runs after typing pauses, avoiding full rerender every keypress */
+function debounce(fn, waitMs) {
+  let timer = null;
+  return function debounced(...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = null;
+      fn.apply(this, args);
+    }, waitMs);
+  };
+}
+
+// --- Filter panel (burger + controls in index.html / index-view.html) ---------
 
 export function bindFilterPanelToggle() {
   const toggleBtn = document.getElementById("menu-toggle");
@@ -216,17 +302,18 @@ export function bindFilterPanelToggle() {
   return () => toggleBtn.removeEventListener("click", onClick);
 }
 
+/** Search, title language, sort, media checkboxes, real-only → calls onStateChange */
 export function bindCommonControls(state, onStateChange) {
   const cleanups = [];
 
   const search = document.getElementById("search");
   if (search) {
-    const onInput = e => {
+    const onInputDebounced = debounce(e => {
       state.searchTerm = e.target.value.toLowerCase();
       onStateChange?.();
-    };
-    search.addEventListener("input", onInput);
-    cleanups.push(() => search.removeEventListener("input", onInput));
+    }, 200);
+    search.addEventListener("input", onInputDebounced);
+    cleanups.push(() => search.removeEventListener("input", onInputDebounced));
   }
 
   const titleMode = document.getElementById("title-mode");
@@ -282,6 +369,21 @@ export function bindCommonControls(state, onStateChange) {
     };
     filterManga.addEventListener("change", onChange);
     cleanups.push(() => filterManga.removeEventListener("change", onChange));
+  }
+
+  const lighthouseFilter = document.getElementById("lighthouse-filter");
+  if (lighthouseFilter) {
+    lighthouseFilter.value =
+      state.lighthouseId != null ? String(state.lighthouseId) : "";
+    const onChange = e => {
+      const v = e.target.value;
+      state.lighthouseId = v === "" ? null : Number(v);
+      onStateChange?.();
+    };
+    lighthouseFilter.addEventListener("change", onChange);
+    cleanups.push(() =>
+      lighthouseFilter.removeEventListener("change", onChange)
+    );
   }
 
   return () => cleanups.forEach(fn => fn());

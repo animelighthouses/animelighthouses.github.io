@@ -1,13 +1,27 @@
+/**
+ * Sighting submission — submit.html
+ *
+ * PRD:
+ * - 2.8: Authenticated submit to sightings table
+ * - 2.9: AniList GraphQL to prefill titles from URL
+ * - 2.10: OAuth gating via submitAuth.js
+ *
+ * Structure: small helpers → DOMContentLoaded (nav, auth, real/fictional UI,
+ *            lighthouse dropdown fetched only when "Real?" is checked, AniList, submit)
+ */
+
 import supabaseClient from "../supabaseClient.js";
 import { initSubmitNav } from "../ui/nav.js";
 import { setFormEnabledFromSession, signInWithGithub } from "./submitAuth.js";
 
+/** Matches RULES.txt: empty strings become null before insert */
 function nullifyEmptyStrings(formData) {
   Object.keys(formData).forEach(k => {
     if (formData[k] === "") formData[k] = null;
   });
 }
 
+/** Extract media type + numeric id from an anilist.co anime/manga URL */
 function parseAniListUrl(url) {
   try {
     const match = url.match(/anilist\.co\/(anime|manga)\/(\d+)/);
@@ -19,9 +33,7 @@ function parseAniListUrl(url) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // #region agent log
-  fetch('http://127.0.0.1:7410/ingest/c74d6243-8a68-4373-b13b-4c1a75b6873d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f7121d'},body:JSON.stringify({sessionId:'f7121d',runId:'pre-fix',hypothesisId:'H1',location:'js/pages/submit-sighting.js:DOMReady',message:'submit-sighting module started',data:{path:window.location.pathname},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
+  // --- Nav + auth (PRD 2.10) ------------------------------------------------
   initSubmitNav();
 
   const form = document.getElementById("lighthouseForm");
@@ -29,14 +41,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   const resultDiv = document.getElementById("result");
 
   loginBtn?.addEventListener("click", signInWithGithub);
-  const hasSession = await setFormEnabledFromSession({ form, loginBtn });
-  // #region agent log
-  fetch('http://127.0.0.1:7410/ingest/c74d6243-8a68-4373-b13b-4c1a75b6873d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f7121d'},body:JSON.stringify({sessionId:'f7121d',runId:'pre-fix',hypothesisId:'H2',location:'js/pages/submit-sighting.js:afterSession',message:'session gating applied',data:{hasSession,formFound:Boolean(form),loginBtnFound:Boolean(loginBtn)},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
+  await setFormEnabledFromSession({ form, loginBtn });
 
+  // --- Real lighthouse: show selector and clear when fictional ---------------
   const isReal = document.getElementById("isReal");
   const lighthouseSection = document.getElementById("lighthouseSection");
   const lighthouseSelect = document.getElementById("lighthouseSelect");
+
+  /** True after we have populated the dropdown from Supabase at least once. */
+  let lighthouseOptionsLoaded = false;
 
   function updateTypeUI() {
     if (!isReal || !lighthouseSection || !lighthouseSelect) return;
@@ -48,11 +61,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  isReal?.addEventListener("change", updateTypeUI);
-  updateTypeUI();
-
-  async function loadLighthouses() {
-    if (!lighthouseSelect) return;
+  /**
+   * Fetches `lighthouses` rows once (anonymous visitors never hit this query unless they check Real?).
+   * Still reads live data from Supabase — not derived from sightings `sessionStorage` cache.
+   */
+  async function loadLighthousesOnce() {
+    if (!lighthouseSelect || lighthouseOptionsLoaded) return;
 
     const { data, error } = await supabaseClient
       .from("lighthouses")
@@ -71,10 +85,19 @@ document.addEventListener("DOMContentLoaded", async () => {
       opt.textContent = l.name_en;
       lighthouseSelect.appendChild(opt);
     });
+
+    lighthouseOptionsLoaded = true;
   }
 
-  await loadLighthouses();
+  isReal?.addEventListener("change", async () => {
+    updateTypeUI();
+    if (isReal.checked) await loadLighthousesOnce();
+  });
 
+  updateTypeUI();
+  if (isReal?.checked) await loadLighthousesOnce();
+
+  // --- AniList (PRD 2.9): cache media_id / media_type for submit payload -----
   const anilistInput = document.getElementById("anilistInput");
   const fetchBtn = document.getElementById("anilistFetchBtn");
   let cachedMediaId = null;
@@ -137,6 +160,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
+  // --- Submit to Supabase (PRD 2.8) -------------------------------------------
   form?.addEventListener("submit", async e => {
     e.preventDefault();
 
@@ -189,7 +213,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     form.reset();
     cachedMediaId = null;
     cachedMediaType = null;
+    lighthouseOptionsLoaded = false;
+    if (lighthouseSelect) lighthouseSelect.innerHTML = `<option value="">-- Select lighthouse --</option>`;
     updateTypeUI();
+    if (isReal?.checked) await loadLighthousesOnce();
   });
 });
-

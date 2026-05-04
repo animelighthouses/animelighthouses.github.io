@@ -1,13 +1,26 @@
+/**
+ * Recent sighting view (home) — index.html
+ *
+ * PRD:
+ * - 2.2: Blog-style recent list, paginated
+ * - 2.4–2.7: Search, filters, sort, title mode (shared control panel in HTML)
+ * - 2.6: titleMode drives card titles via buildSightingCard
+ *
+ * File layout: imports → constants/state → render helpers → init
+ */
+
 import { fetchSightings } from "./dataservice.js";
 import {
   bindCommonControls,
   bindFilterPanelToggle,
   buildSightingCard,
-  filterAndSortSightings
+  filterAndSortSightings,
+  populateLighthouseFilter
 } from "./ui/common.js";
 
 const app = document.getElementById("app");
 
+/** Zero-based page index; reset when filters/search/sort change */
 let currentPage = 0;
 const pageSize = 10;
 let allData = [];
@@ -18,9 +31,12 @@ const state = {
   showAnime: true,
   showManga: true,
   realOnly: false,
-  sortMode: "newest"
+  sortMode: "newest",
+  /** When set, only sightings with this lighthouse_id (merged JSON from Supabase) */
+  lighthouseId: null
 };
 
+/** Renders current page slice + pagination bar */
 function renderPage() {
   const processed = filterAndSortSightings(allData, state);
   app.innerHTML = "";
@@ -36,6 +52,7 @@ function renderPage() {
   renderPagination(processed.length);
 }
 
+/** Classic << < range > >> controls anchored after the cards */
 function renderPagination(totalItems) {
   const totalPages = Math.ceil(totalItems / pageSize);
   const start = currentPage * pageSize;
@@ -93,6 +110,7 @@ function renderPagination(totalItems) {
 
 async function init() {
   allData = await fetchSightings();
+  populateLighthouseFilter(allData, state);
   bindFilterPanelToggle();
   bindCommonControls(state, () => {
     currentPage = 0;

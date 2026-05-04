@@ -1,3 +1,9 @@
+/**
+ * Shared GitHub OAuth + form gating for submit pages.
+ *
+ * PRD 2.10: GitHub via Supabase; forms only usable when a session exists.
+ */
+
 import supabaseClient from "../supabaseClient.js";
 
 export async function exchangeCodeForSession() {
@@ -16,10 +22,10 @@ export async function signInWithGithub() {
   if (error) console.error(error);
 }
 
+/** Disables every control inside the form (stronger than pointer-events alone). */
 function setFormControlsDisabled(form, disabled) {
   if (!form?.elements) return;
   Array.from(form.elements).forEach(el => {
-    // Only disable actual form controls (not fieldsets in some browsers)
     if ("disabled" in el) el.disabled = disabled;
   });
 }
