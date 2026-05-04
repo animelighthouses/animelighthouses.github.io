@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<!-- Index view: compact list + expand cards (PRD 2.3). Entry: /js/index.js -->
+<!-- Browse shell: keep header, filter panel, and footer in sync with index.html. Compact index. Entry: /js/index.js -->
 <html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Anime Lighthouse Index | Index View</title>
+  <script src="/js/theme-boot.js"></script>
   <link rel="stylesheet" href="/css/main.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -32,31 +33,6 @@
         <!-- Search -->
         <div class="panel-section">
           <input type="text" id="search" class="search-input" placeholder="Search..." />
-        </div>
-
-        <!-- Options -->
-        <div class="panel-section">
-          <div class="panel-header">Options</div>
-
-          <label class="control">
-            <span class="filter-dropdown-label">Title language</span>
-            <select id="title-mode">
-              <option value="title_en">English</option>
-              <option value="title_r">Romaji</option>
-              <option value="title_jp">日本語</option>
-            </select>
-          </label>
-
-          <label class="control">
-            <span class="filter-dropdown-label">Sort order</span>
-
-            <select id="sort-mode">
-              <option value="newest">Most recent first</option>
-              <option value="oldest">Oldest first</option>
-              <option value="az">A–Z</option>
-              <option value="za">Z–A</option>
-            </select>
-          </label>
         </div>
 
         <!-- Filters  -->
@@ -91,6 +67,15 @@
             </select>
           </label>
 
+          <label class="control">
+            <span class="filter-dropdown-label">Sort order</span>
+            <select id="sort-mode">
+              <option value="newest">Most recent first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="az">A–Z</option>
+              <option value="za">Z–A</option>
+            </select>
+          </label>
         </div>
       </div>
 
@@ -100,10 +85,33 @@
 
   </div>
 
-  <script type="module">
-    import { initViewNav } from "/js/ui/nav.js";
-    initViewNav();
-  </script>
+  <footer class="site-footer" aria-label="Site preferences">
+    <div class="container site-footer-inner">
+      <label class="site-footer-title-lang">
+        <span class="site-footer-label">Titles</span>
+        <select id="title-mode" class="site-footer-select">
+          <option value="title_en">English</option>
+          <option value="title_r">Romaji</option>
+          <option value="title_jp">日本語</option>
+        </select>
+      </label>
+      <div class="site-footer-theme-row">
+        <span class="site-footer-label" id="light-theme-label">Light theme</span>
+        <button
+          type="button"
+          id="theme-light-toggle"
+          class="theme-switch-btn"
+          role="switch"
+          aria-checked="false"
+          aria-labelledby="light-theme-label">
+          <span class="theme-switch-track" aria-hidden="true">
+            <span class="theme-switch-thumb"></span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </footer>
+
   <script type="module" src="/js/index.js"></script>
 </body>
 

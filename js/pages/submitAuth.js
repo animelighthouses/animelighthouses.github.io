@@ -1,7 +1,8 @@
 /**
- * Shared GitHub OAuth + form gating for submit pages.
+ * Shared GitHub OAuth and submit-form gating for submit.html / submitl.html.
  *
- * PRD 2.10: GitHub via Supabase; forms only usable when a session exists.
+ * Uses Supabase Auth (signInWithOAuth, exchangeCodeForSession, getSession, signOut).
+ * Forms stay disabled until a session exists; RLS on the database is still authoritative.
  */
 
 import supabaseClient from "../supabaseClient.js";

@@ -1,17 +1,12 @@
 /**
- * Sighting submission — submit.html
+ * Sighting submission for submit.html: GitHub OAuth gate, optional real lighthouse link,
+ * AniList URL fetch (GraphQL) to prefill titles and media id/type, insert into Supabase.
  *
- * PRD:
- * - 2.8: Authenticated submit to sightings table
- * - 2.9: AniList GraphQL to prefill titles from URL
- * - 2.10: OAuth gating via submitAuth.js
- *
- * Structure: small helpers → DOMContentLoaded (nav, auth, real/fictional UI,
- *            lighthouse dropdown fetched only when "Real?" is checked, AniList, submit)
+ * Flow: nav + session → real/fictional UI + lighthouse list when needed → AniList → submit.
  */
 
 import supabaseClient from "../supabaseClient.js";
-import { initSubmitNav } from "../ui/nav.js";
+import { initSubmitNav } from "../nav.js";
 import {
   handleSubmitAuthButtonClick,
   setFormEnabledFromSession
@@ -33,7 +28,7 @@ function imageFilenameFromYmd(ymd) {
   return `${ymd}.jpg`;
 }
 
-/** Matches RULES.txt: empty strings become null before insert */
+/** Turn empty string fields into null before database insert. */
 function nullifyEmptyStrings(formData) {
   Object.keys(formData).forEach(k => {
     if (formData[k] === "") formData[k] = null;
@@ -52,7 +47,7 @@ function parseAniListUrl(url) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // --- Nav + auth (PRD 2.10) ------------------------------------------------
+  // --- Nav + auth (GitHub session gates the form) -----------------------------
   initSubmitNav();
 
   const form = document.getElementById("lighthouseForm");
@@ -119,7 +114,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateTypeUI();
   if (isReal?.checked) await loadLighthousesOnce();
 
-  // --- AniList (PRD 2.9): cache media_id / media_type for submit payload -----
+  // --- AniList: cache media_id / media_type for submit payload ---------------
   const anilistInput = document.getElementById("anilistInput");
   const fetchBtn = document.getElementById("anilistFetchBtn");
   let cachedMediaId = null;
@@ -200,7 +195,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initDateAndImageDefaults();
   dateSpottedInput?.addEventListener("change", syncImageFilenameToDate);
 
-  // --- Submit to Supabase (PRD 2.8) -------------------------------------------
+  // --- Submit to Supabase -----------------------------------------------------
   form?.addEventListener("submit", async e => {
     e.preventDefault();
 

@@ -1,15 +1,10 @@
 /**
- * Lighthouse (reference row) submission — submitl.html
- *
- * PRD:
- * - 2.8: Insert into lighthouses table (real-world reference data)
- * - 2.10: Same OAuth gating as sighting form
- *
- * Structure: helpers → DOMContentLoaded (nav, auth, Lighthouse-JAPAN URL → prefecture, submit)
+ * Lighthouse reference row submission for submitl.html: OAuth-gated form,
+ * optional prefecture hint from Lighthouse-JAPAN.com URL, insert into Supabase.
  */
 
 import supabaseClient from "../supabaseClient.js";
-import { initSubmitNav } from "../ui/nav.js";
+import { initSubmitNav } from "../nav.js";
 import {
   handleSubmitAuthButtonClick,
   setFormEnabledFromSession

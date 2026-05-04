@@ -1,10 +1,10 @@
 /**
- * Single Supabase client for the browser.
+ * Single Supabase client for the browser (default export).
  *
- * Depends on the global from the CDN script in each HTML page:
+ * Requires the global `supabase` from the CDN script on each HTML page:
  *   https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2
  *
- * PRD 3: Postgres on Supabase — RLS should enforce who can write; anon key is typical for SPAs.
+ * Uses the publishable anon key; Postgres RLS policies should restrict writes to trusted users.
  */
 
 const supabaseClient = supabase.createClient(

@@ -1,23 +1,22 @@
 /**
- * Recent sighting view (home) — index.html
+ * Recent sightings view for index.html: paginated cards and shared filter panel.
  *
- * PRD:
- * - 2.2: Blog-style recent list, paginated
- * - 2.4–2.7: Search, filters, sort, title mode (shared control panel in HTML)
- * - 2.6: titleMode drives card titles via buildSightingCard
- *
- * File layout: imports → constants/state → render helpers → init
+ * Fetches all sightings once (with cache in dataservice), filters/sorts client-side
+ * via common.js, and marks the Recent/Index tab via nav.js.
  */
 
 import { fetchSightings } from "./dataservice.js";
+import { readStoredTitleMode } from "./preferences.js";
+import { initViewNav } from "./nav.js";
 import {
+  bindAppearanceMode,
   bindCommonControls,
   bindFilterPanelToggle,
   buildSightingCard,
   filterAndSortSightings,
   populateLighthouseFilter,
   scrollWindowToElementTop
-} from "./ui/common.js";
+} from "./common.js";
 
 const app = document.getElementById("app");
 
@@ -28,7 +27,7 @@ let allData = [];
 
 const state = {
   searchTerm: "",
-  titleMode: "title_r",
+  titleMode: readStoredTitleMode("title_r"),
   showAnime: true,
   showManga: true,
   realOnly: false,
@@ -110,9 +109,11 @@ function renderPagination(totalItems) {
 }
 
 async function init() {
+  initViewNav();
   allData = await fetchSightings();
   populateLighthouseFilter(allData, state);
   bindFilterPanelToggle();
+  bindAppearanceMode();
   bindCommonControls(state, () => {
     currentPage = 0;
     renderPage();
@@ -121,4 +122,3 @@ async function init() {
 }
 
 init();
-

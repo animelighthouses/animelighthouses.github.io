@@ -1,12 +1,8 @@
 /**
- * Data access for public browse views.
+ * Public read access: fetch all sightings with nested `lighthouses` row.
  *
- * PRD mapping:
- * - 2.1 / 2.2: Sightings + joined lighthouse row for real entries
- * - Loaded once by Recent (js/main.js) and Index (js/index.js); both filter client-side
- *
- * Small dataset (~few hundred rows): full fetch every time is fine; we still cache in
- * sessionStorage for repeat navigations within the same tab (short TTL; see below).
+ * Used by js/main.js and js/index.js; both pages filter and sort in memory.
+ * Results are cached in sessionStorage for a short TTL to limit repeat requests.
  */
 
 import supabaseClient from "./supabaseClient.js";

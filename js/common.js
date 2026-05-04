@@ -1,14 +1,21 @@
 /**
- * Shared UI for public browse pages (Recent + Index).
+ * Shared UI for public browse pages (index.html Recent view and index-view.html).
  *
- * PRD mapping:
- * - 2.6: buildSightingCard title line uses titleMode (title_en | title_r | title_jp)
- * - 2.4–2.5: filterAndSortSightings (search, media toggles, real-only, lighthouse)
- * - 2.5: sort modes newest | oldest | az | za
- * - 2.3: Index reuses buildSightingCard for expanded rows
+ * Exports: sighting card DOM (buildSightingCard), client-side filter/sort pipeline,
+ * lighthouse dropdown population, burger filter panel, theme toggle, and shared
+ * control bindings (search, title mode, sort, media type, real-only).
  *
- * Section order: link helper → date → scroll → card DOM → search match → filter/sort pipeline → panel bindings
+ * Depends on: preferences.js (theme + title persistence).
+ *
+ * Section order: link/date helpers → scroll → card DOM → filter pipeline → panel bindings
  */
+
+import {
+  applyThemeAttr,
+  persistTheme,
+  persistTitleMode,
+  readStoredTheme
+} from "./preferences.js";
 
 // --- Link + date helpers ----------------------------------------------------
 
@@ -289,7 +296,7 @@ export function populateLighthouseFilter(allData, state) {
   }
 }
 
-/** PRD 2.4: search runs after typing pauses, avoiding full rerender every keypress */
+/** Debounce search input so filtering runs after typing pauses (~200 ms). */
 function debounce(fn, waitMs) {
   let timer = null;
   return function debounced(...args) {
@@ -301,7 +308,7 @@ function debounce(fn, waitMs) {
   };
 }
 
-// --- Filter panel (burger + controls in index.html / index-view.html) ---------
+// --- Filter panel (burger + controls in browse HTML) -------------------------
 
 export function bindFilterPanelToggle() {
   const toggleBtn = document.getElementById("menu-toggle");
@@ -312,6 +319,29 @@ export function bindFilterPanelToggle() {
   const onClick = () => panel.classList.toggle("hidden");
   toggleBtn.addEventListener("click", onClick);
   return () => toggleBtn.removeEventListener("click", onClick);
+}
+
+/** Light theme switch (off = dark default) → localStorage + `data-theme` on `<html>`. */
+export function bindAppearanceMode() {
+  const btn = document.getElementById("theme-light-toggle");
+  if (!btn) return () => {};
+
+  function syncSwitch(lightOn) {
+    btn.setAttribute("aria-checked", lightOn ? "true" : "false");
+  }
+
+  syncSwitch(readStoredTheme() === "light");
+
+  const onClick = () => {
+    const goingLight = readStoredTheme() !== "light";
+    const v = goingLight ? "light" : "dark";
+    persistTheme(v);
+    applyThemeAttr(v);
+    syncSwitch(goingLight);
+  };
+
+  btn.addEventListener("click", onClick);
+  return () => btn.removeEventListener("click", onClick);
 }
 
 /** Search, title language, sort, media checkboxes, real-only → calls onStateChange */
@@ -333,6 +363,7 @@ export function bindCommonControls(state, onStateChange) {
     titleMode.value = state.titleMode;
     const onChange = e => {
       state.titleMode = e.target.value;
+      persistTitleMode(state.titleMode);
       onStateChange?.();
     };
     titleMode.addEventListener("change", onChange);
@@ -400,4 +431,3 @@ export function bindCommonControls(state, onStateChange) {
 
   return () => cleanups.forEach(fn => fn());
 }
-

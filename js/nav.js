@@ -1,10 +1,10 @@
 /**
- * Tab highlight helpers (no routing framework).
+ * Highlights the active primary nav tab using CSS class `active` on `.view-link`.
+ * No client-side router: uses `window.location.pathname`.
  *
- * PRD 4: simple, utilitarian UI — active tab is CSS class .view-link.active
- *
- * - Browse: Recent vs Index (paths / and /index-view)
- * - Submit: Sighting vs Lighthouse (paths containing submit / submitl)
+ * Exports:
+ * - initViewNav — Recent vs Index (paths `/` and `/index-view`)
+ * - initSubmitNav — Sighting vs Lighthouse (`/submit` vs `/submitl`)
  */
 
 export function initViewNav() {
@@ -32,4 +32,3 @@ export function initSubmitNav() {
   viewSighting.classList.toggle("active", !isLighthouse);
   viewLighthouse.classList.toggle("active", isLighthouse);
 }
-

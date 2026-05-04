@@ -1,31 +1,29 @@
 /**
- * Compact index view — index-view.html
+ * Compact index view for index-view.html: one row per sighting, expand for full card.
  *
- * PRD:
- * - 2.3: Compact list rows; expand shows the same card as Recent (buildSightingCard)
- * - 2.4–2.7: Same filter panel semantics as Recent
- *
- * Deferred cards: collapsed rows have no `.card` and no `<img>` until first expand (PRD 2.3, perf).
- *
- * File layout: imports → state → renderIndexView → init
+ * Reuses buildSightingCard from common.js (same card as Recent). Collapsed rows defer
+ * creating card DOM and images until first expand to avoid loading every image at once.
  */
 
 import { fetchSightings } from "./dataservice.js";
+import { readStoredTitleMode } from "./preferences.js";
+import { initViewNav } from "./nav.js";
 import {
+  bindAppearanceMode,
   bindCommonControls,
   bindFilterPanelToggle,
   buildSightingCard,
   filterAndSortSightings,
   populateLighthouseFilter,
   scrollWindowToElementTop
-} from "./ui/common.js";
+} from "./common.js";
 
 const app = document.getElementById("app");
 
 let allData = [];
 const state = {
   searchTerm: "",
-  titleMode: "title_r",
+  titleMode: readStoredTitleMode("title_r"),
   showAnime: true,
   showManga: true,
   realOnly: false,
@@ -121,10 +119,12 @@ function renderIndexView() {
 }
 
 async function init() {
+  initViewNav();
   allData = await fetchSightings();
   populateLighthouseFilter(allData, state);
 
   bindFilterPanelToggle();
+  bindAppearanceMode();
   bindCommonControls(state, () => {
     expanded.clear();
     renderIndexView();
@@ -134,4 +134,3 @@ async function init() {
 }
 
 init();
-
