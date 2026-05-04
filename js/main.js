@@ -28,12 +28,8 @@ function renderPage() {
   const start = currentPage * pageSize;
   const end = start + pageSize;
 
-  // --- then paginate ---
   const pageItems = processed.slice(start, end);
-
-  // --- cards ---
   pageItems.forEach(entry => {
-
     app.appendChild(buildSightingCard(entry, { titleMode: state.titleMode }));
   });
 
@@ -41,8 +37,6 @@ function renderPage() {
 }
 
 function renderPagination(totalItems) {
-  const app = document.getElementById("app");
-
   const totalPages = Math.ceil(totalItems / pageSize);
   const start = currentPage * pageSize;
   const end = start + pageSize;
@@ -50,7 +44,6 @@ function renderPagination(totalItems) {
   const wrapper = document.createElement("div");
   wrapper.className = "pagination";
 
-  // --- first page ---
   const first = document.createElement("button");
   first.textContent = "<<";
   first.disabled = currentPage === 0;
@@ -61,7 +54,6 @@ function renderPagination(totalItems) {
   };
   wrapper.appendChild(first);
 
-  // --- prev ---
   const prev = document.createElement("button");
   prev.textContent = "<";
   prev.disabled = currentPage === 0;
@@ -72,12 +64,10 @@ function renderPagination(totalItems) {
   };
   wrapper.appendChild(prev);
 
-  // --- label ---
   const label = document.createElement("div");
   label.textContent = `${start + 1}–${Math.min(end, totalItems)} of ${totalItems}`;
   wrapper.appendChild(label);
 
-  // --- next ---
   const next = document.createElement("button");
   next.textContent = ">";
   next.disabled = currentPage >= totalPages - 1;
@@ -88,7 +78,6 @@ function renderPagination(totalItems) {
   };
   wrapper.appendChild(next);
 
-  // --- last ---
   const last = document.createElement("button");
   last.textContent = ">>";
   last.disabled = currentPage >= totalPages - 1;
@@ -102,8 +91,6 @@ function renderPagination(totalItems) {
   app.appendChild(wrapper);
 }
 
-
-
 async function init() {
   allData = await fetchSightings();
   bindFilterPanelToggle();
@@ -115,3 +102,4 @@ async function init() {
 }
 
 init();
+

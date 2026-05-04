@@ -47,7 +47,8 @@ export function buildSightingCard(entry, { titleMode }) {
   // TITLE
   const name = document.createElement("div");
   name.className = "title";
-  name.textContent = entry?.[titleMode] || entry.title_en || entry.title_r || entry.title_jp || "";
+  name.textContent =
+    entry?.[titleMode] || entry.title_en || entry.title_r || entry.title_jp || "";
   card.appendChild(name);
 
   // EPISODE / TIMESTAMP / ANILIST
@@ -71,9 +72,7 @@ export function buildSightingCard(entry, { titleMode }) {
     }
 
     if (entry.anilist_link) {
-      ep.appendChild(
-        createLink("AniList", entry.anilist_link, "images/favicon-al.png")
-      );
+      ep.appendChild(createLink("AniList", entry.anilist_link, "images/favicon-al.png"));
     }
 
     card.appendChild(ep);
@@ -168,9 +167,7 @@ function matchesSearch(entry, searchTerm) {
     }
 
     if (typeof value === "object") {
-      return Object.values(value).some(v =>
-        v && String(v).toLowerCase().includes(searchTerm)
-      );
+      return Object.values(value).some(v => v && String(v).toLowerCase().includes(searchTerm));
     }
 
     return String(value).toLowerCase().includes(searchTerm);

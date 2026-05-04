@@ -18,10 +18,8 @@ const state = {
   sortMode: "az"
 };
 
-// track expanded rows
 const expanded = new Set();
 
-// ---------------- INDEX VIEW ----------------
 function renderIndexView() {
   app.innerHTML = "";
 
@@ -37,7 +35,6 @@ function renderIndexView() {
     row.className = "index-row";
 
     const titleText = entry[state.titleMode] || entry.title_en;
-
     const lighthouse =
       entry.lighthouse_type === "real" && entry.lighthouses
         ? ` (${entry.lighthouses.name_en})`
@@ -50,10 +47,7 @@ function renderIndexView() {
     const details = document.createElement("div");
     details.className = "index-details";
 
-    if (!expanded.has(id)) {
-      details.classList.add("hidden");
-    }
-
+    if (!expanded.has(id)) details.classList.add("hidden");
     details.appendChild(buildSightingCard(entry, { titleMode: state.titleMode }));
 
     title.onclick = () => {
@@ -73,25 +67,20 @@ function renderIndexView() {
 
   app.appendChild(container);
 
-  // --- collapse all button ---
-const collapseWrapper = document.createElement("div");
-collapseWrapper.className = "collapse-wrapper";
+  const collapseWrapper = document.createElement("div");
+  collapseWrapper.className = "collapse-wrapper";
 
-const collapseBtn = document.createElement("button");
-collapseBtn.textContent = "Collapse All";
-
-collapseBtn.onclick = () => {
+  const collapseBtn = document.createElement("button");
+  collapseBtn.textContent = "Collapse All";
+  collapseBtn.onclick = () => {
     expanded.clear();
-  document.querySelectorAll(".index-details").forEach(el => {
-    el.classList.add("hidden");
-  });
-};
+    document.querySelectorAll(".index-details").forEach(el => el.classList.add("hidden"));
+  };
 
-collapseWrapper.appendChild(collapseBtn);
-app.appendChild(collapseWrapper);
+  collapseWrapper.appendChild(collapseBtn);
+  app.appendChild(collapseWrapper);
 }
 
-// ---------------- INIT ----------------
 async function init() {
   allData = await fetchSightings();
 
@@ -100,7 +89,9 @@ async function init() {
     expanded.clear();
     renderIndexView();
   });
+
   renderIndexView();
 }
 
 init();
+
