@@ -10,7 +10,10 @@
 
 import supabaseClient from "../supabaseClient.js";
 import { initSubmitNav } from "../ui/nav.js";
-import { setFormEnabledFromSession, signInWithGithub } from "./submitAuth.js";
+import {
+  handleSubmitAuthButtonClick,
+  setFormEnabledFromSession
+} from "./submitAuth.js";
 
 function nullifyEmptyStrings(formData) {
   Object.keys(formData).forEach(k => {
@@ -66,10 +69,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const form = document.getElementById("lighthouseForm");
   const loginBtn = document.getElementById("loginBtn");
+  const noticeEl = document.getElementById("submitAdminNotice");
   const resultDiv = document.getElementById("result");
 
-  loginBtn?.addEventListener("click", signInWithGithub);
-  await setFormEnabledFromSession({ form, loginBtn });
+  loginBtn?.addEventListener("click", () =>
+    handleSubmitAuthButtonClick({ form, loginBtn, noticeEl })
+  );
+  await setFormEnabledFromSession({ form, loginBtn, noticeEl });
 
   const lighthouseJapanInput = form?.querySelector('[name="lighthouse_japan_link"]');
   const prefectureSelect = form?.querySelector('[name="prefecture"]');

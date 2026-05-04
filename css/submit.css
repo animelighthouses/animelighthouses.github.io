@@ -21,7 +21,7 @@ label {
   font-size: 1rem;
   margin-bottom: 0.2rem;
   margin-top: 0.5rem;
-  color: #555;
+  color: var(--text-muted);
 }
 
 input,
@@ -29,9 +29,6 @@ textarea,
 select {
   padding: 0.5rem;
   min-height: 3rem;
-  font-size: 1rem;
-  border: solid;
-  border-width: 0.1rem;
 }
 
 textarea {
@@ -57,23 +54,37 @@ button {
   cursor: pointer;
 }
 
+.btn-row button[type="submit"] {
+  background: var(--accent);
+  color: rgb(11, 22, 34);
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--bg));
+  font-weight: 600;
+}
+
+.btn-row button[type="submit"]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 88%, white);
+}
+
 .result {
   margin-top: 1.5rem;
   padding: 0.75rem;
   font-size: 0.95rem;
-  border: 0.1rem solid #ccc;
-  background: #f9f9f9;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
   display: none;
 }
 
 .result.success {
-  border-color: #4caf50;
-  background: #e8f5e9;
+  border-color: rgba(102, 187, 106, 0.55);
+  background: rgba(102, 187, 106, 0.12);
+  color: color-mix(in srgb, var(--text) 70%, rgb(165, 214, 167));
 }
 
 .result.error {
-  border-color: #f44336;
-  background: #ffebee;
+  border-color: rgba(239, 83, 80, 0.55);
+  background: rgba(239, 83, 80, 0.1);
+  color: color-mix(in srgb, var(--text) 65%, rgb(239, 154, 154));
 }
 
 .checkbox-field label {
@@ -98,5 +109,16 @@ button {
 
 .anilist-row input {
   flex: 1;
+}
+
+.submit-auth-notice {
+  margin: 0.75rem 10px 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--surface);
 }
 

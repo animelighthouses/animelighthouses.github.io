@@ -30,7 +30,13 @@ function setFormControlsDisabled(form, disabled) {
   });
 }
 
-export async function setFormEnabledFromSession({ form, loginBtn }) {
+function setNoticeVisible(noticeEl, visible) {
+  if (!noticeEl) return;
+  if (visible) noticeEl.removeAttribute("hidden");
+  else noticeEl.setAttribute("hidden", "");
+}
+
+export async function setFormEnabledFromSession({ form, loginBtn, noticeEl }) {
   await exchangeCodeForSession();
   const { data } = await supabaseClient.auth.getSession();
   const hasSession = Boolean(data?.session);
@@ -42,11 +48,13 @@ export async function setFormEnabledFromSession({ form, loginBtn }) {
     form.style.pointerEvents = "auto";
     setFormControlsDisabled(form, false);
 
-    loginBtn.disabled = true;
-    loginBtn.textContent = "Logged in";
+    loginBtn.disabled = false;
+    loginBtn.textContent = "Log out";
     loginBtn.style.background = "#4caf50";
     loginBtn.style.color = "white";
-    loginBtn.style.pointerEvents = "none";
+    loginBtn.style.pointerEvents = "auto";
+
+    setNoticeVisible(noticeEl, false);
   } else {
     form.style.opacity = 0.5;
     form.style.pointerEvents = "none";
@@ -57,8 +65,19 @@ export async function setFormEnabledFromSession({ form, loginBtn }) {
     loginBtn.style.background = "";
     loginBtn.style.color = "";
     loginBtn.style.pointerEvents = "auto";
+
+    setNoticeVisible(noticeEl, true);
   }
 
   return hasSession;
 }
 
+export async function handleSubmitAuthButtonClick({ form, loginBtn, noticeEl }) {
+  const { data } = await supabaseClient.auth.getSession();
+  if (data?.session) {
+    await supabaseClient.auth.signOut();
+    await setFormEnabledFromSession({ form, loginBtn, noticeEl });
+  } else {
+    await signInWithGithub();
+  }
+}

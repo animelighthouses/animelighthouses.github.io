@@ -16,7 +16,8 @@ import {
   bindFilterPanelToggle,
   buildSightingCard,
   filterAndSortSightings,
-  populateLighthouseFilter
+  populateLighthouseFilter,
+  scrollWindowToElementTop
 } from "./ui/common.js";
 
 const app = document.getElementById("app");
@@ -109,6 +110,7 @@ function renderIndexView() {
     expanded.clear();
     document.querySelectorAll(".index-details").forEach(el => el.classList.add("hidden"));
     syncCollapseAllDisabled();
+    scrollWindowToElementTop(app);
   };
 
   collapseWrapper.appendChild(collapseBtn);

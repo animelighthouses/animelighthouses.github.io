@@ -15,7 +15,8 @@ import {
   bindFilterPanelToggle,
   buildSightingCard,
   filterAndSortSightings,
-  populateLighthouseFilter
+  populateLighthouseFilter,
+  scrollWindowToElementTop
 } from "./ui/common.js";
 
 const app = document.getElementById("app");
@@ -67,7 +68,7 @@ function renderPagination(totalItems) {
   first.onclick = () => {
     currentPage = 0;
     renderPage();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollWindowToElementTop(app);
   };
   wrapper.appendChild(first);
 
@@ -77,7 +78,7 @@ function renderPagination(totalItems) {
   prev.onclick = () => {
     currentPage--;
     renderPage();
-    window.scrollTo(0, 0);
+    scrollWindowToElementTop(app);
   };
   wrapper.appendChild(prev);
 
@@ -91,7 +92,7 @@ function renderPagination(totalItems) {
   next.onclick = () => {
     currentPage++;
     renderPage();
-    window.scrollTo(0, 0);
+    scrollWindowToElementTop(app);
   };
   wrapper.appendChild(next);
 
@@ -101,7 +102,7 @@ function renderPagination(totalItems) {
   last.onclick = () => {
     currentPage = totalPages - 1;
     renderPage();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollWindowToElementTop(app);
   };
   wrapper.appendChild(last);
 

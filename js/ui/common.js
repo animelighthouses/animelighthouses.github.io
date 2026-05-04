@@ -7,7 +7,7 @@
  * - 2.5: sort modes newest | oldest | az | za
  * - 2.3: Index reuses buildSightingCard for expanded rows
  *
- * Section order: link helper → date → card DOM → search match → filter/sort pipeline → panel bindings
+ * Section order: link helper → date → scroll → card DOM → search match → filter/sort pipeline → panel bindings
  */
 
 // --- Link + date helpers ----------------------------------------------------
@@ -38,6 +38,16 @@ export function formatSpottedDate(dateSpotted) {
     day: "numeric",
     month: "long",
     year: "numeric"
+  });
+}
+
+// --- Scroll -------------------------------------------------------------------
+
+/** Snap (or smooth) the window so `el`'s top edge aligns with the viewport top. */
+export function scrollWindowToElementTop(el, { behavior = "auto" } = {}) {
+  requestAnimationFrame(() => {
+    const top = el.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({ top, behavior });
   });
 }
 
@@ -100,7 +110,8 @@ export function buildSightingCard(entry, { titleMode }) {
     lighthouseBlock.className = "lighthouse-block";
 
     const titleRow = document.createElement("div");
-    const lighthouseName = document.createElement("strong");
+    const lighthouseName = document.createElement("span");
+    lighthouseName.className = "lighthouse-name";
     lighthouseName.textContent =
       `${entry.lighthouses.name_en ?? ""} (${entry.lighthouses.name_jp ?? ""})`.trim();
     titleRow.appendChild(lighthouseName);
@@ -158,7 +169,8 @@ export function buildSightingCard(entry, { titleMode }) {
     const notesDiv = document.createElement("div");
     notesDiv.className = "notes";
 
-    const label = document.createElement("strong");
+    const label = document.createElement("span");
+    label.className = "notes-label";
     label.textContent = "Notes: ";
 
     const text = document.createElement("span");
