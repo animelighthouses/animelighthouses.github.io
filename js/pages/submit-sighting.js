@@ -14,6 +14,22 @@ import supabaseClient from "../supabaseClient.js";
 import { initSubmitNav } from "../ui/nav.js";
 import { setFormEnabledFromSession, signInWithGithub } from "./submitAuth.js";
 
+/** Local `yyyy-mm-dd` for date inputs */
+function todayYmd() {
+  const d = new Date();
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, "0"),
+    String(d.getDate()).padStart(2, "0")
+  ].join("-");
+}
+
+/** Default image filename pattern: same date as "Date spotted" */
+function imageFilenameFromYmd(ymd) {
+  if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return "";
+  return `${ymd}.jpg`;
+}
+
 /** Matches RULES.txt: empty strings become null before insert */
 function nullifyEmptyStrings(formData) {
   Object.keys(formData).forEach(k => {
@@ -160,6 +176,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
+  // --- Date spotted + image filename (yyyy-mm-dd.jpg; sync on date change) ----
+  const dateSpottedInput = form?.querySelector('[name="date_spotted"]');
+  const imageLinkInput = form?.querySelector('[name="image_link"]');
+
+  function syncImageFilenameToDate() {
+    if (!dateSpottedInput || !imageLinkInput) return;
+    const ymd = dateSpottedInput.value;
+    imageLinkInput.value = imageFilenameFromYmd(ymd);
+  }
+
+  function initDateAndImageDefaults() {
+    if (dateSpottedInput) dateSpottedInput.value = todayYmd();
+    syncImageFilenameToDate();
+  }
+
+  initDateAndImageDefaults();
+  dateSpottedInput?.addEventListener("change", syncImageFilenameToDate);
+
   // --- Submit to Supabase (PRD 2.8) -------------------------------------------
   form?.addEventListener("submit", async e => {
     e.preventDefault();
@@ -211,6 +245,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     form.reset();
+    initDateAndImageDefaults();
     cachedMediaId = null;
     cachedMediaType = null;
     lighthouseOptionsLoaded = false;
