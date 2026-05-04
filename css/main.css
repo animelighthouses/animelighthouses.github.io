@@ -186,8 +186,8 @@ h1 {
   align-items: center;
   gap: 10px;
 
-  margin: 2px auto 20px auto;
-  padding: 10px 10px;
+  margin: 2px auto 2px auto;
+  padding: 10px 10px 0px 10px;
 
   width: 100%;
 
@@ -403,7 +403,7 @@ button.burger:hover:not(:disabled) {
 /* Site footer — full-width bar; inner row matches .container width */
 
 .site-footer {
-  margin-top: 1.5rem;
+  margin-top: 0rem;
   width: 100%;
   padding: 0.75rem 0 0.9rem;
   background: var(--bg);
