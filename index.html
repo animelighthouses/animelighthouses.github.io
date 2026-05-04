@@ -17,10 +17,9 @@
 
       <div class="subtitle-bar">
         <div class="subtitle">
-          <span id="view-recent" class="view-link active">Recent</span>
+          <span id="view-recent" class="view-link"><a class="view-anchor" href="/">Recent</a></span>
           •
-          <span id="view-index" class="view-link"><a href="/index-view"
-              style="text-decoration:none;color:grey;">Index</a></span>
+          <span id="view-index" class="view-link"><a class="view-anchor" href="/index-view">Index</a></span>
         </div>
 
         <button id="menu-toggle" class="burger">☰</button>
@@ -85,6 +84,7 @@
           </label>
 
         </div>
+      </div>
 
     </header>
 
@@ -92,6 +92,10 @@
 
   </div>
 
+  <script type="module">
+    import { initViewNav } from "./ui/nav.js";
+    initViewNav();
+  </script>
   <script type="module" src="main.js"></script>
 </body>
 
