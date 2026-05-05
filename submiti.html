@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<!-- Submit image migration for existing sightings. Entry: /js/pages/submit-image.js -->
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Submit images</title>
+    <script src="/js/theme-boot.js"></script>
+    <link rel="stylesheet" href="/css/main.css" />
+    <link rel="stylesheet" href="/css/submit.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pica@9.0.1/dist/pica.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Submit</h1>
+            <div class="subtitle-bar">
+                <div class="subtitle">
+                    <span id="view-sighting" class="view-link"><a class="view-anchor" href="/submit">Sighting</a></span>
+                    •
+                    <span id="view-lighthouse" class="view-link"><a class="view-anchor" href="/submitl">Lighthouse</a></span>
+                    |
+                    <span class="view-link"><a class="view-anchor" href="/">Home</a></span>
+                </div>
+
+                <button id="loginBtn">Login</button>
+            </div>
+            <p id="submitAdminNotice" class="submit-auth-notice" hidden>
+                Only administrators may submit. Please sign in with an authorized account to continue.
+            </p>
+
+            <form id="imageForm">
+                <div class="section">
+                    <div class="field">
+                        <label>Sighting row (old repo images)</label>
+                        <select name="sighting_id" id="sightingSelect" required>
+                            <option value="">Loading…</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="field">
+                        <label>Current images</label>
+                        <div id="currentImages" class="image-grid"></div>
+                        <div id="noCurrentImages" class="hint" hidden>No repo-hosted images found for this row.</div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="field">
+                        <label>Upload replacement image(s)</label>
+                        <input
+                            name="image_files"
+                            id="imageFilesInput"
+                            type="file"
+                            multiple
+                            accept="image/jpeg,image/png,image/webp"
+                            required
+                        />
+                        <div id="newImages" class="image-grid"></div>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button id="submitBtn" type="submit">Upload &amp; Replace</button>
+                </div>
+
+                <div id="result" class="result"></div>
+            </form>
+        </header>
+    </div>
+
+    <script type="module" src="/js/pages/submit-image.js"></script>
+</body>
+
+</html>
+
