@@ -122,3 +122,13 @@ button {
   background: var(--surface);
 }
 
+.image-preview {
+  margin-top: 0.75rem;
+  width: min(520px, 100%);
+  max-height: 340px;
+  object-fit: contain;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface) 75%, black);
+}
+

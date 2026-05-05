@@ -83,7 +83,12 @@
                 <div class="section">
                     <div class="field">
                         <label>Image</label>
-                        <input name="image_link" />
+                        <input
+                            name="image_file"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                        />
+                        <img id="imagePreview" class="image-preview" alt="Selected image preview" hidden />
                     </div>
 
                 </div>
