@@ -16,13 +16,13 @@ const STORAGE_BUCKET = "sightings-images";
 const MAX_IMAGE_WIDTH = 1920;
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024; // pre-processing limit (input file)
 
-let _pica = null;
-async function getPica() {
-  if (_pica) return _pica;
-  const mod = await import("https://esm.run/pica@9.0.1");
-  const factory = mod?.default ?? mod?.pica ?? mod;
-  _pica = typeof factory === "function" ? factory() : factory;
-  return _pica;
+function getPica() {
+  // Provided by <script src="https://cdn.jsdelivr.net/npm/pica@9.0.1/dist/pica.min.js"></script>
+  const factory = globalThis?.pica;
+  if (typeof factory !== "function") {
+    throw new Error("Image resizer (pica) failed to load. Check network/CDN.");
+  }
+  return factory();
 }
 
 /** Local `yyyy-mm-dd` for date inputs */
@@ -125,7 +125,7 @@ async function processImageToWebp(file, { maxWidth = MAX_IMAGE_WIDTH } = {}) {
   dstCanvas.height = dstH;
 
   if (dstW !== srcW || dstH !== srcH) {
-    const pica = await getPica();
+    const pica = getPica();
     await pica.resize(srcCanvas, dstCanvas, {
       quality: 3,
       alpha: false
