@@ -14,6 +14,7 @@ import {
 
 const STORAGE_BUCKET = "sightings-images";
 const MAX_IMAGE_WIDTH = 1920;
+const MAX_IMAGE_HEIGHT = 1920;
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024; // pre-processing limit (input file)
 
 function getPica() {
@@ -63,6 +64,12 @@ function clamp(n, min, max) {
   return Math.min(max, Math.max(min, n));
 }
 
+function shortIdHex8() {
+  const bytes = new Uint8Array(4); // 8 hex chars
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
+}
+
 function slugify(value) {
   const raw = String(value ?? "").trim().toLowerCase();
   if (!raw) return "";
@@ -101,7 +108,10 @@ function toBlob(canvas, type, quality) {
   });
 }
 
-async function processImageToWebp(file, { maxWidth = MAX_IMAGE_WIDTH } = {}) {
+async function processImageToWebp(
+  file,
+  { maxWidth = MAX_IMAGE_WIDTH, maxHeight = MAX_IMAGE_HEIGHT } = {}
+) {
   assertImageFile(file);
 
   const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
@@ -109,7 +119,7 @@ async function processImageToWebp(file, { maxWidth = MAX_IMAGE_WIDTH } = {}) {
   const srcH = bitmap.height;
   if (!srcW || !srcH) throw new Error("Invalid image.");
 
-  const scale = Math.min(1, maxWidth / srcW);
+  const scale = Math.min(1, maxWidth / srcW, maxHeight / srcH);
   const dstW = Math.max(1, Math.round(srcW * scale));
   const dstH = Math.max(1, Math.round(srcH * scale));
 
@@ -344,11 +354,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       const file = imageFileInput?.files?.[0] ?? null;
       if (file) {
         const ymd = dateSpottedInput?.value ?? todayYmd();
-        const titleish = slugify(formData.title_en || formData.title_r || formData.title_jp);
-        const mediaish = cachedMediaId ? `al${cachedMediaId}` : "";
-        const base = [ymd, mediaish, titleish].filter(Boolean).join("_");
-        const suffix = crypto.randomUUID();
-        const objectPath = `sightings/${slugify(base) || ymd}_${suffix}.webp`;
+        const shortId = shortIdHex8();
+        const objectPath = cachedMediaId
+          ? `sightings/${ymd}_${cachedMediaId}_${shortId}.webp`
+          : `sightings/${ymd}_${shortId}.webp`;
 
         const processed = await processImageToWebp(file);
 

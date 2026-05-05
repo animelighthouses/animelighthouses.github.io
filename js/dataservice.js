@@ -10,7 +10,7 @@ import supabaseClient from "./supabaseClient.js";
 /** Bump if cache shape changes */
 const SIGHTINGS_CACHE_KEY = "animelighthouses.sightings.v1";
 /** Max age before refetch (ms). Keeps session fresh without hammering Supabase. */
-const SIGHTINGS_CACHE_TTL_MS = 10 * 60 * 1000;
+const SIGHTINGS_CACHE_TTL_MS = 10 * 1 * 1000;
 
 function readSightingsCache() {
   try {
