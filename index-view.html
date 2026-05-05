@@ -87,28 +87,33 @@
 
   <footer class="site-footer" aria-label="Site preferences">
     <div class="container site-footer-inner">
-      <label class="site-footer-title-lang">
-        <span class="site-footer-label">Titles</span>
-        <select id="title-mode" class="site-footer-select">
-          <option value="title_en">English</option>
-          <option value="title_r">Romaji</option>
-          <option value="title_jp">日本語</option>
-        </select>
-      </label>
-      <div class="site-footer-theme-row">
-        <span class="site-footer-label" id="light-theme-label">Light theme</span>
-        <button
-          type="button"
-          id="theme-light-toggle"
-          class="theme-switch-btn"
-          role="switch"
-          aria-checked="false"
-          aria-labelledby="light-theme-label">
-          <span class="theme-switch-track" aria-hidden="true">
-            <span class="theme-switch-thumb"></span>
-          </span>
-        </button>
+      <div class="site-footer-controls">
+        <div class="site-footer-theme-row">
+          <span class="site-footer-label" id="light-theme-label">Light theme</span>
+          <button
+            type="button"
+            id="theme-light-toggle"
+            class="theme-switch-btn"
+            role="switch"
+            aria-checked="false"
+            aria-labelledby="light-theme-label">
+            <span class="theme-switch-track" aria-hidden="true">
+              <span class="theme-switch-thumb"></span>
+            </span>
+          </button>
+        </div>
+        <label class="site-footer-title-lang">
+          <span class="site-footer-label">Titles</span>
+          <select id="title-mode" class="site-footer-select">
+            <option value="title_en">English</option>
+            <option value="title_r">Romaji</option>
+            <option value="title_jp">日本語</option>
+          </select>
+        </label>
       </div>
+      <nav class="site-footer-links" aria-label="Site links">
+        <a href="/about">About</a>
+      </nav>
     </div>
   </footer>
 

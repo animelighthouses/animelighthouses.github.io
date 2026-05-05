@@ -112,6 +112,12 @@ h1 {
   color: var(--text);
 }
 
+h2 {
+  font-size: 1.05rem;
+  color: var(--text);
+  margin-bottom: 0.4rem;
+}
+
 .subtitle {
   color: var(--text-muted);
   font-size: 1rem;
@@ -124,8 +130,23 @@ h1 {
   background: var(--surface);
   border-radius: 6px;
   padding: 15px;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   /* box-shadow: 0 1px 4px rgba(0,0,0,0.08); */
+}
+
+.content-box {
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 15px;
+  border: 1px solid var(--border);
+}
+
+.about-content p {
+  margin: 0;
+}
+
+.about-content p + p {
+  margin-top: 0.9rem;
 }
 
 .cardimg {
@@ -305,7 +326,7 @@ button.burger:hover:not(:disabled) {
 
 /* spacing between sections */
 .panel-section {
-  margin-bottom: 16px;
+  /* margin-bottom: 16px; */
 }
 
 /* section headers */
@@ -412,9 +433,19 @@ button.burger:hover:not(:disabled) {
 
 .site-footer-inner {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 14px;
+}
+
+.site-footer-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .site-footer-title-lang {
@@ -438,6 +469,7 @@ button.burger:hover:not(:disabled) {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
+  cursor: default;
 }
 
 .site-footer .site-footer-select {
@@ -513,5 +545,43 @@ button.burger:hover:not(:disabled) {
 .theme-switch-btn[aria-checked="true"] .theme-switch-thumb {
   transform: translate(18px, -50%);
   background: rgb(61, 180, 242);
+}
+
+/* Footer link nav (right-aligned column; future links stack below) */
+
+.site-footer-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  /* text-transform: uppercase; */
+  letter-spacing: 0.05em;
+  text-align: right;
+  flex: 0 0 auto;
+  /* padding: 0.5em 0em; */
+}
+
+.site-footer .site-footer-links a,
+.site-footer .site-footer-links a:visited {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.site-footer .site-footer-links a:hover {
+  color: var(--accent);
+}
+
+@media (max-width: 300px) {
+  .site-footer-inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .site-footer-links {
+    align-items: flex-start;
+    text-align: left;
+  }
 }
 
