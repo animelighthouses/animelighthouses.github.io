@@ -5,6 +5,57 @@
 
 :root {
   color-scheme: dark;
+
+  /*
+   * Design tokens (:root[data-theme="light"] overrides colors only unless noted).
+   * --radius-* — control vs card corners, full = pill
+   * --space-* — 4px grid + common composites (rem for section rhythm)
+   * --focus-* — keyboard focus ring
+   * --status-* — submit result banners, danger buttons (semantic fg uses var(--text))
+   */
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 999px;
+
+  --space-micro: 2px;
+  --space-1: 4px;
+  --space-2: 5px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 10px;
+  --space-6: 12px;
+  --space-7: 14px;
+  --space-8: 15px;
+  --space-9: 20px;
+  --space-3px: 3px;
+  --space-section-y: 1.5rem;
+  /* rem rhythm — form/list vertical padding tied to root font size */
+  --space-rem-xs: 0.35rem;
+  --space-rem-sm: 0.5rem;
+  --space-rem-md: 0.75rem;
+  --space-rem-lg: 1rem;
+  --space-rem-xl: 2rem;
+
+  --focus-ring-width: 2px;
+  --focus-ring-color: var(--accent);
+  --focus-offset: 2px;
+  --focus-offset-lg: 3px;
+
+  --status-success-border: rgba(102, 187, 106, 0.55);
+  --status-success-bg: rgba(102, 187, 106, 0.12);
+  --status-success-fg: color-mix(in srgb, var(--text) 70%, rgb(165, 214, 167));
+  --status-danger-border: rgba(239, 83, 80, 0.55);
+  --status-danger-bg: rgba(239, 83, 80, 0.1);
+  --status-danger-fg: color-mix(in srgb, var(--text) 65%, rgb(239, 154, 154));
+
+  --theme-switch-track-w: 44px;
+  --theme-switch-track-h: 26px;
+  --theme-switch-thumb-size: 20px;
+  --theme-switch-thumb-x: var(--space-3px);
+  --theme-switch-thumb-shift: 18px;
+
   --bg: rgb(11, 22, 34);
   --surface: rgb(21, 31, 46);
   --text: rgb(159, 173, 189);
@@ -18,6 +69,10 @@
 
 :root[data-theme="light"] {
   color-scheme: light;
+
+  --status-success-bg: rgba(102, 187, 106, 0.14);
+  --status-danger-bg: rgba(239, 83, 80, 0.08);
+
   --bg: rgb(237, 241, 245);
   --surface: rgb(250, 250, 250);
   --text: rgb(92, 114, 138);
@@ -63,7 +118,7 @@ select {
   color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
 }
 
 input::placeholder,
@@ -76,7 +131,7 @@ button {
   color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
 }
 
 button:hover:not(:disabled) {
@@ -92,23 +147,23 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-offset);
 }
 
 .container {
   max-width: 600px;
   margin: 0 auto;
-  padding: 20px;
+  padding: var(--space-9);
 }
 
 header {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-9);
 }
 
 h1 {
   font-size: 1.3rem;
-  margin-bottom: 5px;
+  margin-bottom: var(--space-2);
   color: var(--text);
 }
 
@@ -129,16 +184,16 @@ h2 {
 --------------------------*/
 .card {
   background: var(--surface);
-  border-radius: 6px;
-  padding: 15px;
-  margin-bottom: 20px;
+  border-radius: var(--radius-md);
+  padding: var(--space-8);
+  margin-bottom: var(--space-9);
   /* box-shadow: 0 1px 4px rgba(0,0,0,0.08); */
 }
 
 .content-box {
   background: var(--surface);
-  border-radius: 6px;
-  padding: 15px;
+  border-radius: var(--radius-md);
+  padding: var(--space-8);
   border: 1px solid var(--border);
 }
 
@@ -152,9 +207,9 @@ h2 {
 
 .cardimg {
   max-width: 100%;
-  border-radius: 6px;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  border-radius: var(--radius-md);
+  margin-top: var(--space-5);
+  margin-bottom: var(--space-5);
   display: block;
 }
 
@@ -182,13 +237,13 @@ h2 {
   width: 1rem;
   height: 1rem;
   vertical-align: middle;
-  margin-right: 4px;
+  margin-right: var(--space-1);
 }
 
 .link-item {
   text-decoration: none;
   color: var(--text-muted);
-  margin-right: 10px;
+  margin-right: var(--space-5);
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
@@ -206,10 +261,10 @@ h2 {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-5);
 
-  margin: 2px auto 2px auto;
-  padding: 10px 10px 0px 10px;
+  margin: var(--space-micro) auto;
+  padding: var(--space-5) var(--space-5) 0 var(--space-5);
 
   width: 100%;
 
@@ -218,11 +273,10 @@ h2 {
 }
 
 .pagination button {
-  padding: 5px;
   background-color: var(--surface);
   border-width: 0rem;
   border-color: transparent;
-  padding: 10px 15px;
+  padding: var(--space-5) var(--space-8);
   font-size: 1rem;
   cursor: pointer;
   color: var(--text-muted);
@@ -247,10 +301,10 @@ h2 {
   justify-content: flex-start;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--space-6);
 
-  margin: 2px auto 20px auto;
-  padding: 10px 0px;
+  margin: var(--space-micro) auto var(--space-9);
+  padding: var(--space-5) 0;
 
   width: 100%;
 }
@@ -264,11 +318,10 @@ h2 {
 }
 
 .collapse-wrapper button {
-  padding: 5px;
   background-color: var(--surface);
   border-width: 0rem;
   border-color: transparent;
-  padding: 10px 15px;
+  padding: var(--space-5) var(--space-8);
   font-size: 0.8rem;
 }
 
@@ -312,11 +365,11 @@ button.burger:hover:not(:disabled) {
 
 /* filter panel */
 .filter-panel {
-  margin-top: 12px;
-  padding: 14px;
+  margin-top: var(--space-6);
+  padding: var(--space-7);
 
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--surface);
 }
 
@@ -335,7 +388,7 @@ button.burger:hover:not(:disabled) {
   font-size: 0.9rem;
   font-weight: 600;
   margin-bottom: 0px;
-  margin-top: 1.5rem;
+  margin-top: var(--space-section-y);
   color: var(--text-muted);
 }
 
@@ -343,17 +396,17 @@ button.burger:hover:not(:disabled) {
 .search-input {
   width: 100%;
   font-size: 1rem; /* 👈 key for mobile */
-  padding: 8px 10px;
+  padding: var(--space-4) var(--space-5);
 
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border-radius: var(--radius-lg);
 }
 
 /* control block */
 .control {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   padding-bottom: 0rem;
 }
 
@@ -364,19 +417,19 @@ button.burger:hover:not(:disabled) {
 /* dropdown */
 .control select {
   font-size: 0.95rem;
-  padding: 6px;
+  padding: var(--space-3);
 }
 
 .checkbox {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-3);
   margin-top: 0px;
 }
 
 .checkbox-group {
   display: flex;
-  gap: 12px;
+  gap: var(--space-6);
   margin-top: 0px;
 }
 
@@ -406,7 +459,7 @@ button.burger:hover:not(:disabled) {
 
 .index-row {
   border-bottom: 1px solid var(--border);
-  padding: 8px 0;
+  padding: var(--space-4) 0;
 }
 
 .index-title {
@@ -437,14 +490,14 @@ button.burger:hover:not(:disabled) {
   flex-direction: row;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
+  gap: var(--space-7);
 }
 
 .site-footer-controls {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 14px;
+  gap: var(--space-7);
   min-width: 0;
   flex: 1 1 auto;
 }
@@ -452,7 +505,7 @@ button.burger:hover:not(:disabled) {
 .site-footer-title-lang {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-4);
   flex-wrap: wrap;
   margin-bottom: 0;
 }
@@ -460,7 +513,7 @@ button.burger:hover:not(:disabled) {
 .site-footer-theme-row {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-4);
   flex-wrap: wrap;
 }
 
@@ -475,11 +528,11 @@ button.burger:hover:not(:disabled) {
 
 .site-footer .site-footer-select {
   font-size: 0.875rem;
-  padding: 6px 10px;
+  padding: var(--space-3) var(--space-5);
   min-height: 2.25rem;
   background: var(--surface);
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border-radius: var(--radius-lg);
   color: var(--text);
 }
 
@@ -489,8 +542,8 @@ button.burger:hover:not(:disabled) {
 }
 
 .site-footer .site-footer-select:focus-visible {
-  outline: 2px solid rgb(61, 180, 242);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-offset);
 }
 
 /* Light toggle: default off (dark); on = light theme */
@@ -511,16 +564,16 @@ button.burger:hover:not(:disabled) {
 }
 
 .site-footer .theme-switch-btn:focus-visible .theme-switch-track {
-  outline: 2px solid rgb(61, 180, 242);
-  outline-offset: 3px;
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-offset-lg);
 }
 
 .theme-switch-track {
   position: relative;
   display: block;
-  width: 44px;
-  height: 26px;
-  border-radius: 999px;
+  width: var(--theme-switch-track-w);
+  height: var(--theme-switch-track-h);
+  border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--text-muted) 28%, var(--surface));
   border: 1px solid var(--border-strong);
   transition: background 0.2s ease, border-color 0.2s ease;
@@ -528,10 +581,10 @@ button.burger:hover:not(:disabled) {
 
 .theme-switch-thumb {
   position: absolute;
-  left: 3px;
+  left: var(--theme-switch-thumb-x);
   top: 50%;
-  width: 20px;
-  height: 20px;
+  width: var(--theme-switch-thumb-size);
+  height: var(--theme-switch-thumb-size);
   border-radius: 50%;
   background: var(--text-muted);
   transform: translateY(-50%);
@@ -539,13 +592,13 @@ button.burger:hover:not(:disabled) {
 }
 
 .theme-switch-btn[aria-checked="true"] .theme-switch-track {
-  background: rgba(61, 180, 242, 0.2);
-  border-color: rgba(61, 180, 242, 0.45);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 .theme-switch-btn[aria-checked="true"] .theme-switch-thumb {
-  transform: translate(18px, -50%);
-  background: rgb(61, 180, 242);
+  transform: translate(var(--theme-switch-thumb-shift), -50%);
+  background: var(--accent);
 }
 
 /* Footer link nav (right-aligned column; future links stack below) */
@@ -554,7 +607,7 @@ button.burger:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
+  gap: var(--space-4);
   font-size: 1rem;
   font-weight: 700;
   /* text-transform: uppercase; */

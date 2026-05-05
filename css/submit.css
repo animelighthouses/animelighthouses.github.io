@@ -1,6 +1,7 @@
 /**
- * Form-only styles (submit.html, submitl.html).
+ * Form-only styles (submit.html, submitl.html, submiti.html).
  * General chrome (container, header rows) comes from main.css.
+ * Tokens (--radius-*, --space-*, --status-*, --space-rem-*) live in main.css :root.
  */
 
 /* Shared styling for submit pages */
@@ -9,7 +10,7 @@ form {
   display: flex;
   flex-direction: column;
   gap: 0rem;
-  margin: 10px;
+  margin: var(--space-5);
 }
 
 .field {
@@ -20,14 +21,14 @@ form {
 label {
   font-size: 1rem;
   margin-bottom: 0.2rem;
-  margin-top: 0.5rem;
+  margin-top: var(--space-rem-sm);
   color: var(--text-muted);
 }
 
 input,
 textarea,
 select {
-  padding: 0.5rem;
+  padding: var(--space-rem-sm);
   min-height: 3rem;
 }
 
@@ -38,14 +39,14 @@ textarea {
 
 .section {
   margin-top: 0rem;
-  padding-top: 1.5rem;
+  padding-top: var(--space-section-y);
 }
 
 .submission-form-title {
   font-weight: bold;
   font-size: 1.5rem;
   margin-bottom: 0rem;
-  padding-top: 1rem;
+  padding-top: var(--space-rem-lg);
 }
 
 button {
@@ -66,31 +67,32 @@ button {
 }
 
 .result {
-  margin-top: 1.5rem;
-  padding: 0.75rem;
+  margin-top: var(--space-section-y);
+  padding: var(--space-rem-md);
   font-size: 0.95rem;
   border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
   background: var(--surface);
   color: var(--text);
   display: none;
 }
 
 .result.success {
-  border-color: rgba(102, 187, 106, 0.55);
-  background: rgba(102, 187, 106, 0.12);
-  color: color-mix(in srgb, var(--text) 70%, rgb(165, 214, 167));
+  border-color: var(--status-success-border);
+  background: var(--status-success-bg);
+  color: var(--status-success-fg);
 }
 
 .result.error {
-  border-color: rgba(239, 83, 80, 0.55);
-  background: rgba(239, 83, 80, 0.1);
-  color: color-mix(in srgb, var(--text) 65%, rgb(239, 154, 154));
+  border-color: var(--status-danger-border);
+  background: var(--status-danger-bg);
+  color: var(--status-danger-fg);
 }
 
 .checkbox-field label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-rem-sm);
 }
 
 .checkbox-field input[type="checkbox"] {
@@ -99,12 +101,12 @@ button {
 }
 
 .btn-row {
-  margin: 2rem 0rem;
+  margin: var(--space-rem-xl) 0rem;
 }
 
 .anilist-row {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-rem-sm);
 }
 
 .anilist-row input {
@@ -112,37 +114,37 @@ button {
 }
 
 .submit-auth-notice {
-  margin: 0.75rem 10px 0;
-  padding: 0.75rem 1rem;
+  margin: var(--space-rem-md) var(--space-5) 0;
+  padding: var(--space-rem-md) var(--space-rem-lg);
   font-size: 0.95rem;
   line-height: 1.45;
   color: var(--text-muted);
   border: 1px solid var(--border-strong);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--surface);
 }
 
 .image-preview {
-  margin-top: 0.75rem;
+  margin-top: var(--space-rem-md);
   width: min(520px, 100%);
   max-height: 340px;
   object-fit: contain;
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--surface) 75%, black);
 }
 
 .image-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 0.75rem;
-  margin-top: 0.75rem;
+  gap: var(--space-rem-md);
+  margin-top: var(--space-rem-md);
 }
 
 .image-tile {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: var(--space-rem-xs);
 }
 
 .image-tile img {
@@ -150,7 +152,7 @@ button {
   aspect-ratio: 16 / 10;
   object-fit: cover;
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--surface) 75%, black);
 }
 
@@ -161,24 +163,23 @@ button {
 }
 
 .hint {
-  margin-top: 0.75rem;
+  margin-top: var(--space-rem-md);
   font-size: 0.9rem;
   color: var(--text-muted);
 }
 
 .image-actions {
   display: flex;
-  gap: 0.4rem;
+  gap: var(--space-rem-xs);
   flex-wrap: wrap;
 }
 
 .image-actions button {
-  padding: 0.35rem 0.5rem;
+  padding: var(--space-rem-xs) var(--space-rem-sm);
   font-size: 0.85rem;
 }
 
 .image-actions button.danger {
-  border-color: rgba(239, 83, 80, 0.55);
-  color: color-mix(in srgb, var(--text) 65%, rgb(239, 154, 154));
+  border-color: var(--status-danger-border);
+  color: var(--status-danger-fg);
 }
-
