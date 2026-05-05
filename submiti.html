@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- Submit image migration for existing sightings. Entry: /js/pages/submit-image.js -->
+<!-- Edit images for existing sightings. Entry: /js/pages/submit-image.js -->
 <html lang="en">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Submit images</title>
+    <title>Edit images</title>
     <script src="/js/theme-boot.js"></script>
     <link rel="stylesheet" href="/css/main.css" />
     <link rel="stylesheet" href="/css/submit.css" />
@@ -36,7 +36,7 @@
             <form id="imageForm">
                 <div class="section">
                     <div class="field">
-                        <label>Sighting row (old repo images)</label>
+                        <label>Sighting row</label>
                         <select name="sighting_id" id="sightingSelect" required>
                             <option value="">Loading…</option>
                         </select>
@@ -47,27 +47,26 @@
                     <div class="field">
                         <label>Current images</label>
                         <div id="currentImages" class="image-grid"></div>
-                        <div id="noCurrentImages" class="hint" hidden>No repo-hosted images found for this row.</div>
+                        <div id="noCurrentImages" class="hint" hidden>No images on this row yet.</div>
                     </div>
                 </div>
 
                 <div class="section">
                     <div class="field">
-                        <label>Upload replacement image(s)</label>
+                        <label>Upload additional image(s)</label>
                         <input
                             name="image_files"
                             id="imageFilesInput"
                             type="file"
                             multiple
                             accept="image/jpeg,image/png,image/webp"
-                            required
                         />
                         <div id="newImages" class="image-grid"></div>
                     </div>
                 </div>
 
                 <div class="btn-row">
-                    <button id="submitBtn" type="submit">Upload &amp; Replace</button>
+                    <button id="saveBtn" type="submit">Save changes</button>
                 </div>
 
                 <div id="result" class="result"></div>

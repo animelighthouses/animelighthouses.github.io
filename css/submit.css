@@ -166,3 +166,19 @@ button {
   color: var(--text-muted);
 }
 
+.image-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.image-actions button {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+.image-actions button.danger {
+  border-color: rgba(239, 83, 80, 0.55);
+  color: color-mix(in srgb, var(--text) 65%, rgb(239, 154, 154));
+}
+

@@ -1,8 +1,10 @@
 /**
- * Image migration for existing `sightings` rows in submiti.html:
+ * Image editor for existing `sightings` rows in submiti.html:
  * - OAuth-gated form
- * - pick a row still using repo-hosted `images/...`
- * - upload 1+ replacement images, process in-browser, upload to Storage, replace `image_link[]`
+ * - choose a row (sorted by newest date_spotted)
+ * - preview existing images, reorder (up/down), delete
+ * - upload additional images (processed + uploaded), append to array
+ * - save updates `image_link[]` and deletes removed Storage objects
  */
 
 import supabaseClient from "../supabaseClient.js";
@@ -156,6 +158,24 @@ function createImageTile({ src, caption, linkHref }) {
   return tile;
 }
 
+function parsePublicUrlToObjectPath(publicUrl, { bucket }) {
+  const u = new URL(publicUrl);
+  const marker = `/storage/v1/object/public/${bucket}/`;
+  const idx = u.pathname.indexOf(marker);
+  if (idx === -1) throw new Error("URL is not a public Storage URL for bucket: " + bucket);
+  const objectPath = u.pathname.slice(idx + marker.length);
+  if (!objectPath) throw new Error("Failed to parse object path from URL.");
+  return decodeURIComponent(objectPath);
+}
+
+function moveItem(arr, fromIdx, toIdx) {
+  if (fromIdx === toIdx) return arr;
+  const next = arr.slice();
+  const [item] = next.splice(fromIdx, 1);
+  next.splice(toIdx, 0, item);
+  return next;
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   initSubmitNav();
 
@@ -169,7 +189,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const noCurrentImages = document.getElementById("noCurrentImages");
   const imageFilesInput = document.getElementById("imageFilesInput");
   const newImages = document.getElementById("newImages");
-  const submitBtn = document.getElementById("submitBtn");
+  const saveBtn = document.getElementById("saveBtn");
 
   loginBtn?.addEventListener("click", () =>
     handleSubmitAuthButtonClick({ form, loginBtn, noticeEl })
@@ -177,41 +197,120 @@ document.addEventListener("DOMContentLoaded", async () => {
   await setFormEnabledFromSession({ form, loginBtn, noticeEl });
 
   /** @type {Array<any>} */
-  let candidateRows = [];
+  let allRows = [];
   /** Map id -> row */
   const rowById = new Map();
 
-  function renderCurrentRow(row) {
-    if (!currentImages || !noCurrentImages) return;
-    currentImages.innerHTML = "";
+  let selectedRow = null;
+  /** @type {string[]} */
+  let originalUrls = [];
+  /** @type {string[]} */
+  let editedUrls = [];
+  /** @type {Set<string>} */
+  let urlsToDelete = new Set();
 
-    const links = Array.isArray(row?.image_link) ? row.image_link : [];
-    const repoLinks = links.filter(u => typeof u === "string" && u.startsWith("images/"));
+  /** @type {File[]} */
+  let pendingFiles = [];
+  /** @type {string[]} */
+  let pendingPreviewUrls = [];
 
-    noCurrentImages.toggleAttribute("hidden", repoLinks.length !== 0);
+  function clearPendingPreviews() {
+    pendingPreviewUrls.forEach(u => URL.revokeObjectURL(u));
+    pendingPreviewUrls = [];
+    if (newImages) newImages.innerHTML = "";
+  }
 
-    repoLinks.forEach(u => {
-      const abs = new URL(u, window.location.origin).toString();
-      currentImages.appendChild(
-        createImageTile({ src: abs, caption: u, linkHref: abs })
-      );
+  function setPendingFiles(files) {
+    pendingFiles = files;
+    clearPendingPreviews();
+    if (!newImages) return;
+
+    if (!pendingFiles.length) return;
+
+    pendingFiles.forEach((f, idx) => {
+      const u = URL.createObjectURL(f);
+      pendingPreviewUrls.push(u);
+      const tile = createImageTile({
+        src: u,
+        caption: `${f.name} (${Math.round(f.size / 1024)}KB)`
+      });
+
+      const actions = document.createElement("div");
+      actions.className = "image-actions";
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.textContent = "Remove";
+      removeBtn.className = "danger";
+      removeBtn.addEventListener("click", () => {
+        const next = pendingFiles.slice();
+        next.splice(idx, 1);
+        setPendingFiles(next);
+        if (imageFilesInput) imageFilesInput.value = "";
+      });
+      actions.appendChild(removeBtn);
+
+      tile.appendChild(actions);
+      newImages.appendChild(tile);
     });
   }
 
-  /** @type {string[]} */
-  let newPreviewObjectUrls = [];
-  function clearNewPreviews() {
-    newPreviewObjectUrls.forEach(u => URL.revokeObjectURL(u));
-    newPreviewObjectUrls = [];
-    if (newImages) newImages.innerHTML = "";
+  function renderCurrentImages() {
+    if (!currentImages || !noCurrentImages) return;
+    currentImages.innerHTML = "";
+
+    const links = Array.isArray(editedUrls) ? editedUrls : [];
+    noCurrentImages.toggleAttribute("hidden", links.length !== 0);
+
+    links.forEach((u, idx) => {
+      const tile = createImageTile({ src: u, caption: u, linkHref: u });
+
+      const actions = document.createElement("div");
+      actions.className = "image-actions";
+
+      const upBtn = document.createElement("button");
+      upBtn.type = "button";
+      upBtn.textContent = "Up";
+      upBtn.disabled = idx === 0;
+      upBtn.addEventListener("click", () => {
+        editedUrls = moveItem(editedUrls, idx, idx - 1);
+        renderCurrentImages();
+      });
+      actions.appendChild(upBtn);
+
+      const downBtn = document.createElement("button");
+      downBtn.type = "button";
+      downBtn.textContent = "Down";
+      downBtn.disabled = idx === links.length - 1;
+      downBtn.addEventListener("click", () => {
+        editedUrls = moveItem(editedUrls, idx, idx + 1);
+        renderCurrentImages();
+      });
+      actions.appendChild(downBtn);
+
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.textContent = "Delete";
+      delBtn.className = "danger";
+      delBtn.addEventListener("click", () => {
+        urlsToDelete.add(u);
+        editedUrls = editedUrls.filter(x => x !== u);
+        renderCurrentImages();
+      });
+      actions.appendChild(delBtn);
+
+      tile.appendChild(actions);
+      currentImages.appendChild(tile);
+    });
   }
 
   imageFilesInput?.addEventListener("change", () => {
     clearResult(resultDiv);
-    clearNewPreviews();
-
     const files = Array.from(imageFilesInput.files || []);
-    if (!files.length || !newImages) return;
+    if (!files.length) {
+      setPendingFiles([]);
+      return;
+    }
 
     for (const f of files) {
       try {
@@ -219,21 +318,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       } catch (e) {
         alert(e?.message ?? "Invalid image.");
         imageFilesInput.value = "";
-        clearNewPreviews();
+        setPendingFiles([]);
         return;
       }
     }
 
-    files.forEach(f => {
-      const u = URL.createObjectURL(f);
-      newPreviewObjectUrls.push(u);
-      newImages.appendChild(
-        createImageTile({ src: u, caption: `${f.name} (${Math.round(f.size / 1024)}KB)` })
-      );
-    });
+    setPendingFiles(files);
   });
 
-  async function loadCandidates() {
+  async function loadAllRows() {
     if (!sightingSelect) return;
     sightingSelect.innerHTML = `<option value="">Loading…</option>`;
 
@@ -249,23 +342,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    const rows = data ?? [];
-    candidateRows = rows.filter(r =>
-      Array.isArray(r.image_link) &&
-      r.image_link.some(u => typeof u === "string" && u.startsWith("images/"))
-    );
+    allRows = data ?? [];
 
     rowById.clear();
-    candidateRows.forEach(r => rowById.set(String(r.id), r));
-
-    if (!candidateRows.length) {
-      sightingSelect.innerHTML = `<option value="">No rows need migration</option>`;
-      renderCurrentRow(null);
-      return;
-    }
+    allRows.forEach(r => rowById.set(String(r.id), r));
 
     sightingSelect.innerHTML = `<option value="">-- Select sighting --</option>`;
-    candidateRows.forEach(r => {
+    allRows.forEach(r => {
       const opt = document.createElement("option");
       opt.value = String(r.id);
       const ymd = normalizeYmd(r.date_spotted);
@@ -279,10 +362,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     clearResult(resultDiv);
     const id = String(sightingSelect.value || "");
     const row = rowById.get(id) || null;
-    renderCurrentRow(row);
+    selectedRow = row;
+    originalUrls = Array.isArray(row?.image_link) ? row.image_link.slice() : [];
+    editedUrls = originalUrls.slice();
+    urlsToDelete = new Set();
+    if (imageFilesInput) imageFilesInput.value = "";
+    setPendingFiles([]);
+    renderCurrentImages();
   });
 
-  await loadCandidates();
+  await loadAllRows();
 
   form?.addEventListener("submit", async e => {
     e.preventDefault();
@@ -300,75 +389,82 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    const files = Array.from(imageFilesInput?.files || []);
-    if (!files.length) {
-      setResult(resultDiv, { kind: "error", text: "Please select at least one image." });
-      return;
-    }
-
-    for (const f of files) {
-      try {
-        assertImageFile(f);
-      } catch (err) {
-        setResult(resultDiv, { kind: "error", text: err?.message ?? "Invalid image." });
-        return;
-      }
-    }
-
     try {
-      if (submitBtn) submitBtn.disabled = true;
-      setResult(resultDiv, { kind: "", text: "Processing and uploading…" });
+      if (saveBtn) saveBtn.disabled = true;
+      setResult(resultDiv, { kind: "", text: "Saving…" });
 
       const ymd = normalizeYmd(row.date_spotted);
       const mediaId = String(row.media_id ?? "").trim();
 
-      const urls = [];
-      for (const f of files) {
-        const processed = await processImageToWebp(f);
-        const shortId = shortIdHex8();
-        const objectPath = mediaId
-          ? `sightings/${ymd}_${mediaId}_${shortId}.webp`
-          : `sightings/${ymd}_${shortId}.webp`;
+      // 1) Upload any pending files and append their URLs.
+      if (pendingFiles.length) {
+        setResult(resultDiv, {
+          kind: "",
+          text: `Processing and uploading ${pendingFiles.length} image(s)…`
+        });
 
-        const { error: uploadError } = await supabaseClient.storage
+        for (const f of pendingFiles) {
+          const processed = await processImageToWebp(f);
+          const shortId = shortIdHex8();
+          const objectPath = mediaId
+            ? `sightings/${ymd}_${mediaId}_${shortId}.webp`
+            : `sightings/${ymd}_${shortId}.webp`;
+
+          const { error: uploadError } = await supabaseClient.storage
+            .from(STORAGE_BUCKET)
+            .upload(objectPath, processed.blob, {
+              contentType: "image/webp",
+              upsert: false
+            });
+          if (uploadError) throw uploadError;
+
+          const { data: publicData } = supabaseClient.storage
+            .from(STORAGE_BUCKET)
+            .getPublicUrl(objectPath);
+
+          const publicUrl = publicData?.publicUrl;
+          if (!publicUrl) throw new Error("Failed to generate public URL.");
+          editedUrls.push(publicUrl);
+        }
+
+        if (imageFilesInput) imageFilesInput.value = "";
+        setPendingFiles([]);
+        renderCurrentImages();
+      }
+
+      // 2) Delete removed Storage objects.
+      if (urlsToDelete.size) {
+        setResult(resultDiv, { kind: "", text: `Deleting ${urlsToDelete.size} image(s)…` });
+        const objectPaths = Array.from(urlsToDelete).map(u =>
+          parsePublicUrlToObjectPath(u, { bucket: STORAGE_BUCKET })
+        );
+        const { error: removeError } = await supabaseClient.storage
           .from(STORAGE_BUCKET)
-          .upload(objectPath, processed.blob, {
-            contentType: "image/webp",
-            upsert: false
-          });
-        if (uploadError) throw uploadError;
-
-        const { data: publicData } = supabaseClient.storage
-          .from(STORAGE_BUCKET)
-          .getPublicUrl(objectPath);
-
-        const publicUrl = publicData?.publicUrl;
-        if (!publicUrl) throw new Error("Failed to generate public URL.");
-        urls.push(publicUrl);
+          .remove(objectPaths);
+        if (removeError) throw removeError;
       }
 
       const { error: updateError } = await supabaseClient
         .from("sightings")
-        .update({ image_link: urls })
+        .update({ image_link: editedUrls })
         .eq("id", row.id);
       if (updateError) throw updateError;
 
       setResult(resultDiv, {
         kind: "success",
-        text: `Updated sighting #${row.id} with ${urls.length} image(s).`
+        text: `Saved sighting #${row.id} (${editedUrls.length} image(s)).`
       });
 
-      // Refresh list (row no longer qualifies if it had only repo images).
-      imageFilesInput.value = "";
-      clearNewPreviews();
-      await loadCandidates();
-      if (sightingSelect) sightingSelect.value = "";
-      renderCurrentRow(null);
+      // Update local row cache and reset deletion set.
+      row.image_link = editedUrls.slice();
+      rowById.set(String(row.id), row);
+      originalUrls = editedUrls.slice();
+      urlsToDelete = new Set();
     } catch (err) {
       console.error(err);
       setResult(resultDiv, { kind: "error", text: "Error: " + (err?.message ?? "Unknown error") });
     } finally {
-      if (submitBtn) submitBtn.disabled = false;
+      if (saveBtn) saveBtn.disabled = false;
     }
   });
 });
