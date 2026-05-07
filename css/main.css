@@ -207,10 +207,49 @@ h2 {
 
 .cardimg {
   max-width: 100%;
+  max-height: 80vh;
+  height: auto;
+  object-fit: contain;
   border-radius: var(--radius-md);
   margin-top: var(--space-5);
   margin-bottom: var(--space-5);
   display: block;
+  margin-left: auto;
+  margin-right: auto;
+  cursor: pointer;
+}
+
+/* -------------------------
+   Lightbox (image expand)
+--------------------------*/
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  overscroll-behavior: contain;
+}
+
+.lightbox.hidden {
+  display: none;
+}
+
+.lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.lightbox-img {
+  position: relative;
+  max-width: 100vw;
+  max-height: 90vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 0;
+  cursor: pointer;
 }
 
 .title {
@@ -261,39 +300,40 @@ h2 {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: var(--space-5);
-
-  margin: var(--space-micro) auto;
-  padding: var(--space-5) var(--space-5) 0 var(--space-5);
-
+  flex-wrap: wrap;
+  gap: var(--space-4);
   width: 100%;
-
+  margin: var(--space-6) auto;
+  padding: 0;
   color: var(--text-muted);
   font-size: 1rem;
 }
 
 .pagination button {
-  background-color: var(--surface);
-  border-width: 0rem;
-  border-color: transparent;
-  padding: var(--space-5) var(--space-8);
-  font-size: 1rem;
+  padding: var(--space-4) var(--space-6);
+  min-height: 2.25rem;
+  font-size: 0.95rem;
   cursor: pointer;
   color: var(--text-muted);
 }
 
 .pagination button:hover {
-  background-color: var(--surface);
   color: var(--accent);
 }
 
 .pagination button:disabled {
-  opacity: 0;
-  pointer-events: none; /* prevents invisible clicks */
+  opacity: 0.45;
+  cursor: default;
 }
 
 .pagination.hidden {
   display: none;
+}
+
+.pagination .pagination-label {
+  padding: 0 var(--space-2);
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .collapse-wrapper {
@@ -376,11 +416,6 @@ button.burger:hover:not(:disabled) {
 /* hidden state */
 .hidden {
   display: none;
-}
-
-/* spacing between sections */
-.panel-section {
-  /* margin-bottom: 16px; */
 }
 
 /* section headers */

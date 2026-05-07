@@ -6,7 +6,7 @@
  */
 
 import { fetchSightings } from "./dataservice.js";
-import { readStoredTitleMode } from "./preferences.js";
+import { readStoredNavPosition, readStoredTitleMode } from "./preferences.js";
 import { initViewNav } from "./nav.js";
 import {
   bindAppearanceMode,
@@ -25,9 +25,13 @@ let currentPage = 0;
 const pageSize = 10;
 let allData = [];
 
+/** Keep preloaded Image objects alive (url -> Image). */
+const preloadImageByUrl = new Map();
+
 const state = {
   searchTerm: "",
   titleMode: readStoredTitleMode("title_r"),
+  navPosition: readStoredNavPosition("bottom"),
   showAnime: true,
   showManga: true,
   realOnly: false,
@@ -35,6 +39,22 @@ const state = {
   /** When set, only sightings with this lighthouse_id (merged JSON from Supabase) */
   lighthouseId: null
 };
+
+function preloadPageHeroImages(processed, pageIndex) {
+  const start = pageIndex * pageSize;
+  const end = start + pageSize;
+  const items = processed.slice(start, end);
+  if (!items.length) return;
+
+  for (const entry of items) {
+    const url = entry?.image_link?.[0];
+    if (!url || preloadImageByUrl.has(url)) continue;
+    const img = new Image();
+    img.decoding = "async";
+    img.src = url;
+    preloadImageByUrl.set(url, img);
+  }
+}
 
 /** Renders current page slice + pagination bar */
 function renderPage() {
@@ -44,22 +64,50 @@ function renderPage() {
   const start = currentPage * pageSize;
   const end = start + pageSize;
 
+  const shouldTop = state.navPosition === "top" || state.navPosition === "both";
+  const shouldBottom =
+    state.navPosition === "bottom" || state.navPosition === "both" || !state.navPosition;
+
+  if (shouldTop) {
+    app.appendChild(createPagination(processed.length, { scrollAfter: "lastCardTop" }));
+  }
+
   const pageItems = processed.slice(start, end);
   pageItems.forEach(entry => {
     app.appendChild(buildSightingCard(entry, { titleMode: state.titleMode }));
   });
 
-  renderPagination(processed.length);
+  if (shouldBottom) {
+    app.appendChild(createPagination(processed.length, { scrollAfter: "top" }));
+  }
+
+  // Preload the next page's hero images so navigation feels instant.
+  preloadPageHeroImages(processed, currentPage + 1);
 }
 
-/** Classic << < range > >> controls anchored after the cards */
-function renderPagination(totalItems) {
-  const totalPages = Math.ceil(totalItems / pageSize);
+/** Classic << < range > >> controls */
+function createPagination(totalItems, { scrollAfter = "top" } = {}) {
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const start = currentPage * pageSize;
   const end = start + pageSize;
 
+  const safeTotal = Math.max(0, Number(totalItems) || 0);
+  const labelStart = safeTotal === 0 ? 0 : start + 1;
+  const labelEnd = Math.min(end, safeTotal);
+
   const wrapper = document.createElement("div");
   wrapper.className = "pagination";
+
+  const scrollAfterRender = () => {
+    if (scrollAfter === "lastCardTop") {
+      const cards = app.querySelectorAll(".card");
+      const lastCard = cards.length ? cards[cards.length - 1] : null;
+      if (lastCard) scrollWindowToElementTop(lastCard);
+      else scrollWindowToElementTop(app);
+      return;
+    }
+    scrollWindowToElementTop(app);
+  };
 
   const first = document.createElement("button");
   first.textContent = "<<";
@@ -67,7 +115,7 @@ function renderPagination(totalItems) {
   first.onclick = () => {
     currentPage = 0;
     renderPage();
-    scrollWindowToElementTop(app);
+    scrollAfterRender();
   };
   wrapper.appendChild(first);
 
@@ -77,12 +125,13 @@ function renderPagination(totalItems) {
   prev.onclick = () => {
     currentPage--;
     renderPage();
-    scrollWindowToElementTop(app);
+    scrollAfterRender();
   };
   wrapper.appendChild(prev);
 
   const label = document.createElement("div");
-  label.textContent = `${start + 1}–${Math.min(end, totalItems)} of ${totalItems}`;
+  label.className = "pagination-label";
+  label.textContent = `${labelStart}–${labelEnd} of ${safeTotal}`;
   wrapper.appendChild(label);
 
   const next = document.createElement("button");
@@ -91,7 +140,7 @@ function renderPagination(totalItems) {
   next.onclick = () => {
     currentPage++;
     renderPage();
-    scrollWindowToElementTop(app);
+    scrollAfterRender();
   };
   wrapper.appendChild(next);
 
@@ -101,11 +150,11 @@ function renderPagination(totalItems) {
   last.onclick = () => {
     currentPage = totalPages - 1;
     renderPage();
-    scrollWindowToElementTop(app);
+    scrollAfterRender();
   };
   wrapper.appendChild(last);
 
-  app.appendChild(wrapper);
+  return wrapper;
 }
 
 async function init() {

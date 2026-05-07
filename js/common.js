@@ -12,8 +12,10 @@
 
 import {
   applyThemeAttr,
+  persistNavPosition,
   persistTheme,
   persistTitleMode,
+  readStoredNavPosition,
   readStoredTheme
 } from "./preferences.js";
 
@@ -58,7 +60,105 @@ export function scrollWindowToElementTop(el, { behavior = "auto" } = {}) {
   });
 }
 
+/** Snap (or smooth) the window so `el`'s bottom edge aligns with the viewport top. */
+export function scrollWindowToElementBottom(el, { behavior = "auto" } = {}) {
+  requestAnimationFrame(() => {
+    const bottom = el.getBoundingClientRect().bottom + window.scrollY;
+    window.scrollTo({ top: bottom, behavior });
+  });
+}
+
 // --- Sighting card (single visual unit for Recent and Index expand) ----------
+
+let lightboxEl = null;
+let lightboxImgEl = null;
+let restoreBodyOverflow = null;
+let onLightboxKeydown = null;
+
+function ensureLightbox() {
+  if (lightboxEl && lightboxImgEl) return;
+
+  lightboxEl = document.createElement("div");
+  lightboxEl.className = "lightbox hidden";
+  lightboxEl.setAttribute("role", "dialog");
+  lightboxEl.setAttribute("aria-modal", "true");
+
+  const backdrop = document.createElement("div");
+  backdrop.className = "lightbox-backdrop";
+
+  lightboxImgEl = document.createElement("img");
+  lightboxImgEl.className = "lightbox-img";
+  lightboxImgEl.alt = "";
+  lightboxImgEl.decoding = "async";
+
+  // Click anywhere (image or backdrop) closes.
+  lightboxEl.addEventListener("click", () => closeLightbox());
+
+  lightboxEl.appendChild(backdrop);
+  lightboxEl.appendChild(lightboxImgEl);
+  document.body.appendChild(lightboxEl);
+}
+
+function openLightbox(url) {
+  if (!url) return;
+  ensureLightbox();
+
+  lightboxImgEl.src = url;
+  lightboxEl.classList.remove("hidden");
+
+  if (!restoreBodyOverflow) {
+    const prev = document.body.style.overflow;
+    const prevPaddingRight = document.body.style.paddingRight;
+    const prevPosition = document.body.style.position;
+    const prevTop = document.body.style.top;
+    const prevLeft = document.body.style.left;
+    const prevRight = document.body.style.right;
+    const prevWidth = document.body.style.width;
+    const scrollY = window.scrollY || 0;
+    const scrollbarWidth =
+      Math.max(0, window.innerWidth - document.documentElement.clientWidth) || 0;
+    restoreBodyOverflow = () => {
+      document.body.style.overflow = prev;
+      document.body.style.paddingRight = prevPaddingRight;
+      document.body.style.position = prevPosition;
+      document.body.style.top = prevTop;
+      document.body.style.left = prevLeft;
+      document.body.style.right = prevRight;
+      document.body.style.width = prevWidth;
+      window.scrollTo(0, scrollY);
+      restoreBodyOverflow = null;
+    };
+    document.body.style.overflow = "hidden";
+    if (scrollbarWidth) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+    // iOS Safari can still scroll with overflow hidden; pin the page.
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+  }
+
+  if (!onLightboxKeydown) {
+    onLightboxKeydown = e => {
+      if (e.key === "Escape") closeLightbox();
+    };
+    window.addEventListener("keydown", onLightboxKeydown);
+  }
+}
+
+function closeLightbox() {
+  if (!lightboxEl) return;
+  lightboxEl.classList.add("hidden");
+  if (lightboxImgEl) lightboxImgEl.src = "";
+
+  restoreBodyOverflow?.();
+  if (onLightboxKeydown) {
+    window.removeEventListener("keydown", onLightboxKeydown);
+    onLightboxKeydown = null;
+  }
+}
 
 export function buildSightingCard(entry, { titleMode }) {
   const card = document.createElement("div");
@@ -74,6 +174,9 @@ export function buildSightingCard(entry, { titleMode }) {
     const img = document.createElement("img");
     img.className = "cardimg";
     img.src = entry.image_link[0];
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.addEventListener("click", () => openLightbox(img.src));
     card.appendChild(img);
   }
 
@@ -368,6 +471,21 @@ export function bindCommonControls(state, onStateChange) {
     };
     titleMode.addEventListener("change", onChange);
     cleanups.push(() => titleMode.removeEventListener("change", onChange));
+  }
+
+  const navPos = document.getElementById("nav-position");
+  if (navPos) {
+    if (typeof state.navPosition !== "string") {
+      state.navPosition = readStoredNavPosition("bottom");
+    }
+    navPos.value = state.navPosition;
+    const onChange = e => {
+      state.navPosition = e.target.value;
+      persistNavPosition(state.navPosition);
+      onStateChange?.();
+    };
+    navPos.addEventListener("change", onChange);
+    cleanups.push(() => navPos.removeEventListener("change", onChange));
   }
 
   const sortMode = document.getElementById("sort-mode");

@@ -5,8 +5,10 @@
 
 export const THEME_STORAGE_KEY = "animelighthouse.theme";
 export const TITLE_MODE_STORAGE_KEY = "animelighthouse.titleMode";
+export const NAV_POS_STORAGE_KEY = "animelighthouse.navPosition";
 
 export const TITLE_MODE_VALUES = new Set(["title_en", "title_r", "title_jp"]);
+export const NAV_POS_VALUES = new Set(["top", "bottom", "both"]);
 
 export function normalizeTitleMode(value, fallback = "title_r") {
   return TITLE_MODE_VALUES.has(value) ? value : fallback;
@@ -25,6 +27,26 @@ export function persistTitleMode(value) {
   if (!TITLE_MODE_VALUES.has(value)) return;
   try {
     localStorage.setItem(TITLE_MODE_STORAGE_KEY, value);
+  } catch (_) {}
+}
+
+export function normalizeNavPosition(value, fallback = "bottom") {
+  return NAV_POS_VALUES.has(value) ? value : fallback;
+}
+
+export function readStoredNavPosition(fallback = "bottom") {
+  try {
+    const raw = localStorage.getItem(NAV_POS_STORAGE_KEY);
+    return normalizeNavPosition(raw, fallback);
+  } catch {
+    return fallback;
+  }
+}
+
+export function persistNavPosition(value) {
+  if (!NAV_POS_VALUES.has(value)) return;
+  try {
+    localStorage.setItem(NAV_POS_STORAGE_KEY, value);
   } catch (_) {}
 }
 
