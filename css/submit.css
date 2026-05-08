@@ -213,9 +213,9 @@ button {
 }
 
 .image-preview {
-  margin-top: var(--space-rem-md);
-  width: min(520px, 100%);
-  max-height: 340px;
+  margin: var(--space-rem-md) 0;
+  width: min(360px, 100%);
+  max-height: 220px;
   object-fit: contain;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);

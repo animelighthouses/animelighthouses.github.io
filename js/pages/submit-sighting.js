@@ -489,8 +489,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       showTraceMatch(top, isHigh ? "high" : "mid");
       setTraceStatus(
         isHigh
-          ? `Strong match: ${titleLabel} (${pct}%). Confirm to insert.`
-          : `Possible match: ${titleLabel} (${pct}%). Verify before inserting.`,
+          ? `Strong match: ${titleLabel} (${pct}%).`
+          : `Possible match: ${titleLabel} (${pct}%).`,
         isHigh ? "ok" : "warn"
       );
       showTraceInsertBtn(() => {
