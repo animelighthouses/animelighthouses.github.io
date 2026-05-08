@@ -89,6 +89,15 @@
                             type="file"
                             accept="image/jpeg,image/png,image/webp"
                         />
+                        <div class="trace-row">
+                            <button type="button" id="traceMoeFetchBtn" disabled>Identify (trace.moe)</button>
+                            <button type="button" id="traceMoeInsertBtn" hidden>Insert episode + timestamp</button>
+                            <span id="traceMoeStatus" class="trace-status" aria-live="polite"></span>
+                        </div>
+                        <div id="traceMoeMatch" class="trace-match" hidden>
+                            <img id="traceMoeThumb" alt="trace.moe matched frame" />
+                            <div id="traceMoeMeta" class="trace-meta"></div>
+                        </div>
                         <img id="imagePreview" class="image-preview" alt="Selected image preview" hidden />
                     </div>
 

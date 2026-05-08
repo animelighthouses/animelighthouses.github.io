@@ -1,8 +1,10 @@
 /**
  * Sighting submission for submit.html: GitHub OAuth gate, optional real lighthouse link,
- * AniList URL fetch (GraphQL) to prefill titles and media id/type, insert into Supabase.
+ * AniList URL fetch (GraphQL) to prefill titles and media id/type,
+ * trace.moe screenshot lookup (three-tier confidence) to prefill episode/timestamp
+ * (and AniList side when those fields are still empty), insert into Supabase.
  *
- * Flow: nav + session → real/fictional UI + lighthouse list when needed → AniList → submit.
+ * Flow: nav + session → real/fictional UI + lighthouse list when needed → AniList / trace.moe → submit.
  */
 
 import supabaseClient from "../supabaseClient.js";
@@ -16,6 +18,15 @@ const STORAGE_BUCKET = "sightings-images";
 const MAX_IMAGE_WIDTH = 1920;
 const MAX_IMAGE_HEIGHT = 1920;
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024; // pre-processing limit (input file)
+
+// trace.moe (https://soruly.github.io/trace.moe-api/#/docs).
+// Anonymous tier; raw image bytes posted as request body. anilistInfo=1 expands
+// the result's `anilist` field to include titles. cutBorders trims letterbox.
+const TRACE_MOE_ENDPOINT = "https://api.trace.moe/search?anilistInfo=1&cutBorders";
+// Three-tier confidence thresholds. Tweak here if matches feel too permissive
+// or too strict — TRACE_HIGH auto-accepts, TRACE_LOW is the failure floor.
+const TRACE_HIGH = 0.9;
+const TRACE_LOW = 0.75;
 
 function getPica() {
   // Provided by <script src="https://cdn.jsdelivr.net/npm/pica@9.0.1/dist/pica.min.js"></script>
@@ -58,6 +69,66 @@ function parseAniListUrl(url) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Fetch romaji/english/native titles + media type from AniList by numeric id.
+ * Returns the `Media` object or null. Shared by the AniList Fetch button and
+ * the trace.moe high-confidence auto-chain.
+ */
+async function fetchAniListById(id) {
+  const query = `
+    query ($id: Int) {
+      Media(id: $id) {
+        title { romaji english native }
+        type
+      }
+    }
+  `;
+  const res = await fetch("https://graphql.anilist.co", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, variables: { id: Number(id) } })
+  });
+  const json = await res.json();
+  return json?.data?.Media ?? null;
+}
+
+/** Episode formatter: numeric -> `E<n>`, otherwise pass-through string (e.g. "OVA"). */
+function formatEpisode(ep) {
+  if (ep == null || ep === "") return "";
+  const s = String(ep);
+  return /^\d+$/.test(s) ? `E${s}` : s;
+}
+
+/** Seconds-from-start (float) -> `hh:mm:ss`. */
+function formatTimestamp(secondsFromStart) {
+  if (typeof secondsFromStart !== "number" || !Number.isFinite(secondsFromStart)) return "";
+  const total = Math.max(0, Math.floor(secondsFromStart));
+  const hh = String(Math.floor(total / 3600)).padStart(2, "0");
+  const mm = String(Math.floor((total % 3600) / 60)).padStart(2, "0");
+  const ss = String(total % 60).padStart(2, "0");
+  return `${hh}:${mm}:${ss}`;
+}
+
+/**
+ * POST raw image bytes to trace.moe and return the top-similarity result.
+ * Body is the File itself (NOT multipart). Throws on non-2xx or empty result.
+ */
+async function queryTraceMoe(file) {
+  const res = await fetch(TRACE_MOE_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": file.type || "application/octet-stream" },
+    body: file
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`trace.moe ${res.status}: ${txt || res.statusText}`);
+  }
+  const json = await res.json();
+  const top = Array.isArray(json?.result) ? json.result[0] : null;
+  if (!top) throw new Error("No match returned.");
+  return top;
 }
 
 function clamp(n, min, max) {
@@ -239,48 +310,179 @@ document.addEventListener("DOMContentLoaded", async () => {
     cachedMediaId = id;
     cachedMediaType = type;
 
-    const query = `
-      query ($id: Int) {
-        Media(id: $id) {
-          title {
-            romaji
-            english
-            native
-          }
-        }
-      }
-    `;
-
     try {
-      const res = await fetch("https://graphql.anilist.co", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, variables: { id: Number(id) } })
-      });
-
-      const json = await res.json();
-      const media = json?.data?.Media;
-
+      const media = await fetchAniListById(id);
       if (!media) {
         alert("AniList entry not found");
         return;
       }
 
-      const title_en = media.title.english || media.title.romaji;
-      const title_r = media.title.romaji;
-      const title_jp = media.title.native;
-
       const titleEnEl = form?.querySelector('[name="title_en"]');
-      if (titleEnEl) titleEnEl.value = title_en || "";
+      if (titleEnEl) titleEnEl.value = media.title.english || media.title.romaji || "";
 
       const titleREl = form?.querySelector('[name="title_r"]');
-      if (titleREl) titleREl.value = title_r || "";
+      if (titleREl) titleREl.value = media.title.romaji || "";
 
       const titleJpEl = form?.querySelector('[name="title_jp"]');
-      if (titleJpEl) titleJpEl.value = title_jp || "";
+      if (titleJpEl) titleJpEl.value = media.title.native || "";
     } catch (err) {
       console.error(err);
       alert("Failed to fetch AniList data");
+    }
+  });
+
+  // --- trace.moe: identify uploaded screenshot --------------------------------
+  // Three-tier confidence:
+  //   conf >= TRACE_HIGH         → silently apply result + chain AniList fetch
+  //   TRACE_LOW <= conf < HIGH   → show thumbnail + "Insert" button (manual accept)
+  //   conf < TRACE_LOW           → render warning, leave fields untouched
+  // Write rules on accept:
+  //   episode + timestamp → ALWAYS overwrite
+  //   anilist_link / cachedMediaId / cachedMediaType / titles → set only if empty
+  const traceBtn = document.getElementById("traceMoeFetchBtn");
+  const traceInsertBtn = document.getElementById("traceMoeInsertBtn");
+  const traceStatus = document.getElementById("traceMoeStatus");
+  const traceMatch = document.getElementById("traceMoeMatch");
+  const traceThumb = document.getElementById("traceMoeThumb");
+  const traceMeta = document.getElementById("traceMoeMeta");
+
+  function setTraceStatus(text, state = "") {
+    if (!traceStatus) return;
+    traceStatus.textContent = text ?? "";
+    if (state) traceStatus.dataset.state = state;
+    else delete traceStatus.dataset.state;
+  }
+
+  function clearTraceMatch() {
+    if (traceMatch) {
+      traceMatch.setAttribute("hidden", "");
+      delete traceMatch.dataset.tier;
+    }
+    if (traceThumb) traceThumb.removeAttribute("src");
+    if (traceMeta) traceMeta.textContent = "";
+  }
+
+  function showTraceMatch(top, tier) {
+    if (!traceMatch || !traceThumb || !traceMeta) return;
+    if (top?.image) traceThumb.src = top.image;
+    if (top?.filename) traceThumb.title = top.filename;
+    const titleLabel =
+      top?.anilist?.title?.english ?? top?.anilist?.title?.romaji ?? "?";
+    const epLabel = top?.episode != null && top?.episode !== "" ? formatEpisode(top.episode) : "E?";
+    traceMeta.textContent = `${titleLabel} · ${epLabel} · ${formatTimestamp(top?.from ?? 0)}`;
+    traceMatch.dataset.tier = tier;
+    traceMatch.removeAttribute("hidden");
+  }
+
+  function hideTraceInsertBtn() {
+    if (!traceInsertBtn) return;
+    traceInsertBtn.setAttribute("hidden", "");
+    traceInsertBtn.onclick = null;
+  }
+
+  function showTraceInsertBtn(onClick) {
+    if (!traceInsertBtn) return;
+    traceInsertBtn.removeAttribute("hidden");
+    traceInsertBtn.onclick = () => {
+      hideTraceInsertBtn();
+      onClick();
+    };
+  }
+
+  function resetTraceUi() {
+    setTraceStatus("");
+    clearTraceMatch();
+    hideTraceInsertBtn();
+    if (traceBtn) traceBtn.disabled = !imageFileInput?.files?.[0];
+  }
+
+  /**
+   * Apply an accepted trace.moe result to the form.
+   * Episode + timestamp always overwrite; AniList side only fills when empty.
+   * autoAniList=true chains a GraphQL lookup to fill blank title fields.
+   */
+  function applyTraceMoeResult(top, { autoAniList }) {
+    const epEl = form?.querySelector('[name="episode"]');
+    const tsEl = form?.querySelector('[name="timestamp"]');
+    if (epEl) epEl.value = formatEpisode(top.episode);
+    if (tsEl) tsEl.value = formatTimestamp(top.from);
+
+    const anilistId = top?.anilist?.id ?? null;
+    if (anilistId) {
+      if (cachedMediaId == null) cachedMediaId = String(anilistId);
+      if (cachedMediaType == null) cachedMediaType = "anime";
+      if (anilistInput && !anilistInput.value.trim()) {
+        anilistInput.value = `https://anilist.co/anime/${anilistId}`;
+      }
+    }
+
+    if (autoAniList && anilistId) {
+      fetchAniListById(anilistId)
+        .then(media => {
+          if (!media) return;
+          const titleEnEl = form?.querySelector('[name="title_en"]');
+          const titleREl = form?.querySelector('[name="title_r"]');
+          const titleJpEl = form?.querySelector('[name="title_jp"]');
+          const isEmpty = el => !el || !el.value.trim();
+          if (isEmpty(titleEnEl)) {
+            titleEnEl.value = media.title.english || media.title.romaji || "";
+          }
+          if (isEmpty(titleREl)) titleREl.value = media.title.romaji || "";
+          if (isEmpty(titleJpEl)) titleJpEl.value = media.title.native || "";
+          // Refine cachedMediaType to AniList's authoritative value (anime|manga).
+          if (media.type) cachedMediaType = String(media.type).toLowerCase();
+        })
+        .catch(e => console.warn("AniList auto-fetch failed:", e));
+    }
+  }
+
+  traceBtn?.addEventListener("click", async () => {
+    const file = imageFileInput?.files?.[0];
+    if (!file) return;
+
+    traceBtn.disabled = true;
+    hideTraceInsertBtn();
+    clearTraceMatch();
+    setTraceStatus("Identifying…");
+
+    try {
+      const top = await queryTraceMoe(file);
+      const conf = Number(top.similarity ?? 0);
+      const pct = (conf * 100).toFixed(1);
+      const titleLabel =
+        top?.anilist?.title?.english ?? top?.anilist?.title?.romaji ?? "?";
+
+      if (conf < TRACE_LOW) {
+        showTraceMatch(top, "low");
+        setTraceStatus(
+          `No reliable match (best: ${titleLabel} @ ${pct}%). Verify manually.`,
+          "fail"
+        );
+        return;
+      }
+
+      if (conf >= TRACE_HIGH) {
+        showTraceMatch(top, "high");
+        applyTraceMoeResult(top, { autoAniList: true });
+        setTraceStatus(`Strong match: ${titleLabel} (${pct}%).`, "ok");
+        return;
+      }
+
+      // Mid tier: surface result; let user accept manually.
+      showTraceMatch(top, "mid");
+      setTraceStatus(
+        `Possible match: ${titleLabel} (${pct}%). Verify before inserting.`,
+        "warn"
+      );
+      showTraceInsertBtn(() => {
+        applyTraceMoeResult(top, { autoAniList: false });
+        setTraceStatus(`Inserted: ${titleLabel} (${pct}%).`, "ok");
+      });
+    } catch (err) {
+      console.error(err);
+      setTraceStatus(`Lookup failed: ${err?.message ?? "unknown error"}.`, "fail");
+    } finally {
+      traceBtn.disabled = !imageFileInput?.files?.[0];
     }
   });
 
@@ -296,6 +498,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       imagePreview.setAttribute("hidden", "");
       imagePreview.removeAttribute("src");
     }
+    resetTraceUi();
   }
 
   initDateAndImageDefaults();
@@ -308,6 +511,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       previewObjectUrl = null;
     }
 
+    // New / cleared file invalidates any previous trace.moe lookup.
+    resetTraceUi();
+
     if (!file || !imagePreview) return;
     try {
       assertImageFile(file);
@@ -316,12 +522,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       imageFileInput.value = "";
       imagePreview.setAttribute("hidden", "");
       imagePreview.removeAttribute("src");
+      resetTraceUi();
       return;
     }
 
     previewObjectUrl = URL.createObjectURL(file);
     imagePreview.src = previewObjectUrl;
     imagePreview.removeAttribute("hidden");
+    if (traceBtn) traceBtn.disabled = false;
   });
 
   // --- Submit to Supabase -----------------------------------------------------

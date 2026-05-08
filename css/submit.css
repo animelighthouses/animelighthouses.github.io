@@ -113,6 +113,76 @@ button {
   flex: 1;
 }
 
+/*
+ * trace.moe screenshot lookup row sits directly under the image input.
+ * Status text colour switches via [data-state] (ok | warn | fail | "" idle).
+ * Thumbnail box mirrors the colour through [data-tier] (high | mid | low).
+ */
+.trace-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-rem-sm);
+  margin-top: var(--space-rem-sm);
+}
+
+.trace-status {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  flex: 1;
+  min-width: 0;
+}
+
+.trace-status[data-state="ok"] {
+  color: var(--status-success-fg);
+}
+
+.trace-status[data-state="warn"] {
+  color: var(--accent);
+}
+
+.trace-status[data-state="fail"] {
+  color: var(--status-danger-fg);
+}
+
+.trace-match {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-rem-xs);
+  margin-top: var(--space-rem-sm);
+  padding: var(--space-rem-sm);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  width: min(360px, 100%);
+}
+
+.trace-match[data-tier="high"] {
+  border-color: var(--status-success-border);
+}
+
+.trace-match[data-tier="mid"] {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border-strong));
+}
+
+.trace-match[data-tier="low"] {
+  border-color: var(--status-danger-border);
+}
+
+.trace-match img {
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--surface) 75%, black);
+}
+
+.trace-meta {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
 .submit-auth-notice {
   margin: var(--space-rem-md) var(--space-5) 0;
   padding: var(--space-rem-md) var(--space-rem-lg);
