@@ -252,6 +252,74 @@ h2 {
   cursor: pointer;
 }
 
+/* -------------------------
+   Multi-image nav (card + lightbox)
+   - Wrap is sized to the image so 10% columns align with the image, not the card.
+   - Buttons are always rendered; toggled with the [hidden] attribute when at
+     first/last bound or on single-image cards.
+--------------------------*/
+.card-image-wrap {
+  position: relative;
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin: var(--space-5) auto;
+}
+
+.card-image-wrap .cardimg {
+  margin: 0;
+}
+
+.card-image-nav,
+.lightbox-nav {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 10%;
+  min-width: 44px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: white;
+  font-size: 2rem;
+  font-weight: 300;
+  line-height: 1;
+  opacity: 0.55;
+  cursor: pointer;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.55);
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.card-image-nav:hover:not(:disabled),
+.card-image-nav:focus-visible,
+.lightbox-nav:hover:not(:disabled),
+.lightbox-nav:focus-visible {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.18);
+  color: white;
+}
+
+.card-image-nav[hidden],
+.lightbox-nav[hidden] {
+  display: none;
+}
+
+.card-image-prev,
+.lightbox-prev {
+  left: 0;
+}
+
+.card-image-next,
+.lightbox-next {
+  right: 0;
+}
+
+.lightbox-nav {
+  z-index: 1;
+}
+
 .title {
   font-weight: bold;
   font-size: 1.5rem;

@@ -13,6 +13,7 @@ import {
   bindCommonControls,
   bindFilterPanelToggle,
   buildSightingCard,
+  closeLightboxIfOpen,
   filterAndSortSightings,
   populateLighthouseFilter,
   scrollWindowToElementTop
@@ -58,6 +59,9 @@ function preloadPageHeroImages(processed, pageIndex) {
 
 /** Renders current page slice + pagination bar */
 function renderPage() {
+  // Card DOM is wiped below; close any open lightbox so its active controller
+  // doesn't reference an orphaned card image.
+  closeLightboxIfOpen();
   const processed = filterAndSortSightings(allData, state);
   app.innerHTML = "";
 

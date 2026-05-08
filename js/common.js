@@ -68,12 +68,30 @@ export function scrollWindowToElementBottom(el, { behavior = "auto" } = {}) {
   });
 }
 
-// --- Sighting card (single visual unit for Recent and Index expand) ----------
+// --- Sighting card image: lightbox singleton + per-card multi-image nav -----
 
 let lightboxEl = null;
 let lightboxImgEl = null;
+let lightboxPrevBtn = null;
+let lightboxNextBtn = null;
+/** The card-image controller currently driving the lightbox (or null when closed). */
+let activeController = null;
 let restoreBodyOverflow = null;
 let onLightboxKeydown = null;
+
+/** Toggle a nav button between fully hidden+disabled and visible+enabled. */
+function setNavBtnHidden(btn, hidden) {
+  if (!btn) return;
+  if (hidden) {
+    btn.setAttribute("hidden", "");
+    btn.setAttribute("aria-hidden", "true");
+    btn.disabled = true;
+  } else {
+    btn.removeAttribute("hidden");
+    btn.removeAttribute("aria-hidden");
+    btn.disabled = false;
+  }
+}
 
 function ensureLightbox() {
   if (lightboxEl && lightboxImgEl) return;
@@ -91,19 +109,150 @@ function ensureLightbox() {
   lightboxImgEl.alt = "";
   lightboxImgEl.decoding = "async";
 
-  // Click anywhere (image or backdrop) closes.
-  lightboxEl.addEventListener("click", () => closeLightbox());
+  lightboxPrevBtn = document.createElement("button");
+  lightboxPrevBtn.type = "button";
+  lightboxPrevBtn.className = "lightbox-nav lightbox-prev";
+  lightboxPrevBtn.setAttribute("aria-label", "Previous image");
+  lightboxPrevBtn.textContent = "‹";
+
+  lightboxNextBtn = document.createElement("button");
+  lightboxNextBtn.type = "button";
+  lightboxNextBtn.className = "lightbox-nav lightbox-next";
+  lightboxNextBtn.setAttribute("aria-label", "Next image");
+  lightboxNextBtn.textContent = "›";
+
+  // Backdrop and image close the lightbox; nav buttons stop propagation
+  // and route navigation through the active controller.
+  backdrop.addEventListener("click", () => closeLightbox());
+  lightboxImgEl.addEventListener("click", () => closeLightbox());
+
+  lightboxPrevBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    if (activeController) activeController.setIndex(activeController.getIndex() - 1);
+  });
+  lightboxNextBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    if (activeController) activeController.setIndex(activeController.getIndex() + 1);
+  });
 
   lightboxEl.appendChild(backdrop);
   lightboxEl.appendChild(lightboxImgEl);
+  lightboxEl.appendChild(lightboxPrevBtn);
+  lightboxEl.appendChild(lightboxNextBtn);
   document.body.appendChild(lightboxEl);
 }
 
-function openLightbox(url) {
-  if (!url) return;
+/**
+ * Build a card's image block: image plus optional left/right overlay nav columns.
+ *
+ * Returns { wrap, controller } where `controller` is the single source of truth
+ * for the current image index and is reused by the lightbox while open so card
+ * thumbnail and lightbox stay in sync.
+ */
+function buildCardImageBlock(entry) {
+  const urls = (entry.image_link || []).slice();
+  let index = 0;
+
+  const wrap = document.createElement("div");
+  wrap.className = "card-image-wrap";
+
+  const cardImg = document.createElement("img");
+  cardImg.className = "cardimg";
+  cardImg.src = urls[0];
+  cardImg.loading = "lazy";
+  cardImg.decoding = "async";
+
+  const prevBtn = document.createElement("button");
+  prevBtn.type = "button";
+  prevBtn.className = "card-image-nav card-image-prev";
+  prevBtn.setAttribute("aria-label", "Previous image");
+  prevBtn.textContent = "‹";
+
+  const nextBtn = document.createElement("button");
+  nextBtn.type = "button";
+  nextBtn.className = "card-image-nav card-image-next";
+  nextBtn.setAttribute("aria-label", "Next image");
+  nextBtn.textContent = "›";
+
+  const isMulti = urls.length > 1;
+  setNavBtnHidden(prevBtn, !isMulti || index <= 0);
+  setNavBtnHidden(nextBtn, !isMulti || index >= urls.length - 1);
+
+  function preloadNeighbors(i) {
+    for (const n of [i - 1, i + 1]) {
+      if (n >= 0 && n < urls.length) {
+        const im = new Image();
+        im.decoding = "async";
+        im.src = urls[n];
+      }
+    }
+  }
+
+  function syncNavVisibility() {
+    if (!isMulti) return;
+    setNavBtnHidden(prevBtn, index <= 0);
+    setNavBtnHidden(nextBtn, index >= urls.length - 1);
+    if (activeController === controller) {
+      setNavBtnHidden(lightboxPrevBtn, index <= 0);
+      setNavBtnHidden(lightboxNextBtn, index >= urls.length - 1);
+    }
+  }
+
+  function setIndex(next) {
+    // Card has been removed from the DOM (filter re-render) and we are not
+    // driving the lightbox either: nothing to update.
+    if (!cardImg.isConnected && activeController !== controller) return;
+
+    const clamped = Math.max(0, Math.min(urls.length - 1, next));
+    if (clamped !== index) {
+      index = clamped;
+      cardImg.src = urls[index];
+      if (activeController === controller && lightboxImgEl) {
+        lightboxImgEl.src = urls[index];
+      }
+    }
+    syncNavVisibility();
+    preloadNeighbors(index);
+  }
+
+  const controller = {
+    urls,
+    getIndex: () => index,
+    setIndex,
+    cardImg,
+    prevBtn,
+    nextBtn
+  };
+
+  cardImg.addEventListener("click", () => openLightbox(controller));
+  prevBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    setIndex(index - 1);
+  });
+  nextBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    setIndex(index + 1);
+  });
+
+  wrap.appendChild(cardImg);
+  wrap.appendChild(prevBtn);
+  wrap.appendChild(nextBtn);
+
+  return { wrap, controller };
+}
+
+function openLightbox(controller) {
+  if (!controller?.urls?.length) return;
   ensureLightbox();
 
-  lightboxImgEl.src = url;
+  activeController = controller;
+  const i = controller.getIndex();
+  lightboxImgEl.src = controller.urls[i];
+
+  const isMulti = controller.urls.length > 1;
+  setNavBtnHidden(lightboxPrevBtn, !isMulti || i <= 0);
+  setNavBtnHidden(lightboxNextBtn, !isMulti || i >= controller.urls.length - 1);
+
   lightboxEl.classList.remove("hidden");
 
   if (!restoreBodyOverflow) {
@@ -142,7 +291,13 @@ function openLightbox(url) {
 
   if (!onLightboxKeydown) {
     onLightboxKeydown = e => {
-      if (e.key === "Escape") closeLightbox();
+      if (e.key === "Escape") {
+        closeLightbox();
+      } else if (e.key === "ArrowRight" && activeController) {
+        activeController.setIndex(activeController.getIndex() + 1);
+      } else if (e.key === "ArrowLeft" && activeController) {
+        activeController.setIndex(activeController.getIndex() - 1);
+      }
     };
     window.addEventListener("keydown", onLightboxKeydown);
   }
@@ -152,11 +307,19 @@ function closeLightbox() {
   if (!lightboxEl) return;
   lightboxEl.classList.add("hidden");
   if (lightboxImgEl) lightboxImgEl.src = "";
+  activeController = null;
 
   restoreBodyOverflow?.();
   if (onLightboxKeydown) {
     window.removeEventListener("keydown", onLightboxKeydown);
     onLightboxKeydown = null;
+  }
+}
+
+/** Hide the lightbox if it's currently open. Call before re-rendering card lists. */
+export function closeLightboxIfOpen() {
+  if (lightboxEl && !lightboxEl.classList.contains("hidden")) {
+    closeLightbox();
   }
 }
 
@@ -171,13 +334,8 @@ export function buildSightingCard(entry, { titleMode }) {
 
   // IMAGE
   if (entry.image_link?.length) {
-    const img = document.createElement("img");
-    img.className = "cardimg";
-    img.src = entry.image_link[0];
-    img.loading = "lazy";
-    img.decoding = "async";
-    img.addEventListener("click", () => openLightbox(img.src));
-    card.appendChild(img);
+    const { wrap } = buildCardImageBlock(entry);
+    card.appendChild(wrap);
   }
 
   // TITLE

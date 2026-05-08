@@ -13,6 +13,7 @@ import {
   bindCommonControls,
   bindFilterPanelToggle,
   buildSightingCard,
+  closeLightboxIfOpen,
   filterAndSortSightings,
   populateLighthouseFilter,
   scrollWindowToElementTop
@@ -41,6 +42,9 @@ function syncCollapseAllDisabled() {
 }
 
 function renderIndexView() {
+  // Card DOM is wiped below; close any open lightbox so its active controller
+  // doesn't reference an orphaned card image.
+  closeLightboxIfOpen();
   app.innerHTML = "";
 
   const processed = filterAndSortSightings(allData, state);
