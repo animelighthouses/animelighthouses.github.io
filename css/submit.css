@@ -113,6 +113,19 @@ button {
   flex: 1;
 }
 
+/* File input + trace.moe Identify button on a single line, mirroring .anilist-row. */
+.image-input-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-rem-sm);
+  flex-wrap: wrap;
+}
+
+.image-input-row input[type="file"] {
+  flex: 1;
+  min-width: 0;
+}
+
 /*
  * trace.moe screenshot lookup row sits directly under the image input.
  * Status text colour switches via [data-state] (ok | warn | fail | "" idle).
@@ -155,6 +168,11 @@ button {
   border-radius: var(--radius-md);
   background: var(--surface);
   width: min(360px, 100%);
+}
+
+/* `display: flex` above otherwise overrides the `hidden` HTML attribute. */
+.trace-match[hidden] {
+  display: none;
 }
 
 .trace-match[data-tier="high"] {

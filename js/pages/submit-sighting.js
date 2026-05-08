@@ -332,15 +332,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // --- trace.moe: identify uploaded screenshot --------------------------------
-  // Three-tier confidence:
-  //   conf >= TRACE_HIGH         → silently apply result + chain AniList fetch
-  //   TRACE_LOW <= conf < HIGH   → show thumbnail + "Insert" button (manual accept)
-  //   conf < TRACE_LOW           → render warning, leave fields untouched
-  // Write rules on accept:
-  //   episode + timestamp → ALWAYS overwrite
-  //   anilist_link / cachedMediaId / cachedMediaType / titles → set only if empty
+  // Three-tier confidence (all "good" tiers require an explicit Insert click;
+  // styling differs to make the confidence obvious at a glance):
+  //   conf >= TRACE_HIGH         → green "Strong match" + Insert button
+  //   TRACE_LOW <= conf < HIGH   → blue  "Possible match" + Insert button
+  //   conf < TRACE_LOW           → red   warning, no Insert offered
+  // On Insert (both good tiers): episode + timestamp ALWAYS overwrite, then
+  // chain a GraphQL fetch to fill blank title fields and refine media_type.
+  // Other fields (anilist_link / cachedMediaId / cachedMediaType / titles)
+  // are only ever set if currently empty/null — never overwritten.
   const traceBtn = document.getElementById("traceMoeFetchBtn");
   const traceInsertBtn = document.getElementById("traceMoeInsertBtn");
+  const traceClearBtn = document.getElementById("traceMoeClearBtn");
   const traceStatus = document.getElementById("traceMoeStatus");
   const traceMatch = document.getElementById("traceMoeMatch");
   const traceThumb = document.getElementById("traceMoeThumb");
@@ -368,8 +371,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (top?.filename) traceThumb.title = top.filename;
     const titleLabel =
       top?.anilist?.title?.english ?? top?.anilist?.title?.romaji ?? "?";
-    const epLabel = top?.episode != null && top?.episode !== "" ? formatEpisode(top.episode) : "E?";
-    traceMeta.textContent = `${titleLabel} · ${epLabel} · ${formatTimestamp(top?.from ?? 0)}`;
+    const epLabel = formatEpisode(top?.episode); // "" when null/missing — omitted below
+    const parts = [titleLabel];
+    if (epLabel) parts.push(epLabel);
+    parts.push(formatTimestamp(top?.from ?? 0));
+    traceMeta.textContent = parts.join(" · ");
     traceMatch.dataset.tier = tier;
     traceMatch.removeAttribute("hidden");
   }
@@ -389,12 +395,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
   }
 
+  function showTraceClearBtn() {
+    if (traceClearBtn) traceClearBtn.removeAttribute("hidden");
+  }
+
+  function hideTraceClearBtn() {
+    if (traceClearBtn) traceClearBtn.setAttribute("hidden", "");
+  }
+
   function resetTraceUi() {
     setTraceStatus("");
     clearTraceMatch();
     hideTraceInsertBtn();
+    hideTraceClearBtn();
     if (traceBtn) traceBtn.disabled = !imageFileInput?.files?.[0];
   }
+
+  // Clear dismisses the trace.moe interface (status / match panel / Insert)
+  // without touching the selected image, so the user can re-query if needed.
+  traceClearBtn?.addEventListener("click", resetTraceUi);
 
   /**
    * Apply an accepted trace.moe result to the form.
@@ -458,29 +477,31 @@ document.addEventListener("DOMContentLoaded", async () => {
           `No reliable match (best: ${titleLabel} @ ${pct}%). Verify manually.`,
           "fail"
         );
+        showTraceClearBtn();
         return;
       }
 
-      if (conf >= TRACE_HIGH) {
-        showTraceMatch(top, "high");
-        applyTraceMoeResult(top, { autoAniList: true });
-        setTraceStatus(`Strong match: ${titleLabel} (${pct}%).`, "ok");
-        return;
-      }
-
-      // Mid tier: surface result; let user accept manually.
-      showTraceMatch(top, "mid");
+      // High and mid tiers both require explicit confirmation via the Insert
+      // button. Only the styling and label wording differ; on click both run
+      // applyTraceMoeResult with autoAniList=true so the AniList GraphQL
+      // chain runs after the user accepts.
+      const isHigh = conf >= TRACE_HIGH;
+      showTraceMatch(top, isHigh ? "high" : "mid");
       setTraceStatus(
-        `Possible match: ${titleLabel} (${pct}%). Verify before inserting.`,
-        "warn"
+        isHigh
+          ? `Strong match: ${titleLabel} (${pct}%). Confirm to insert.`
+          : `Possible match: ${titleLabel} (${pct}%). Verify before inserting.`,
+        isHigh ? "ok" : "warn"
       );
       showTraceInsertBtn(() => {
-        applyTraceMoeResult(top, { autoAniList: false });
+        applyTraceMoeResult(top, { autoAniList: true });
         setTraceStatus(`Inserted: ${titleLabel} (${pct}%).`, "ok");
       });
+      showTraceClearBtn();
     } catch (err) {
       console.error(err);
       setTraceStatus(`Lookup failed: ${err?.message ?? "unknown error"}.`, "fail");
+      showTraceClearBtn();
     } finally {
       traceBtn.disabled = !imageFileInput?.files?.[0];
     }
