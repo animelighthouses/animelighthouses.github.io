@@ -13,113 +13,14 @@ import {
   handleSubmitAuthButtonClick,
   setFormEnabledFromSession
 } from "./submitAuth.js";
-
-const STORAGE_BUCKET = "sightings-images";
-const MAX_IMAGE_WIDTH = 1920;
-const MAX_IMAGE_HEIGHT = 1920;
-const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
-
-function getPica() {
-  const factory = globalThis?.pica;
-  if (typeof factory !== "function") {
-    throw new Error("Image resizer (pica) failed to load. Check network/CDN.");
-  }
-  return factory();
-}
-
-function clamp(n, min, max) {
-  return Math.min(max, Math.max(min, n));
-}
-
-function shortIdHex8() {
-  const bytes = new Uint8Array(4); // 8 hex chars
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
-}
-
-function extFromMime(mime) {
-  const m = String(mime ?? "").toLowerCase();
-  if (m === "image/jpeg") return "jpg";
-  if (m === "image/png") return "png";
-  if (m === "image/webp") return "webp";
-  return "";
-}
-
-function assertImageFile(file) {
-  if (!file) throw new Error("Please select an image file.");
-  if (!(file instanceof File)) throw new Error("Invalid file.");
-  if (file.size > MAX_IMAGE_BYTES) {
-    throw new Error(`Image is too large (max ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)}MB).`);
-  }
-  const ext = extFromMime(file.type);
-  if (!ext) throw new Error("Unsupported image type. Use JPEG, PNG, or WebP.");
-}
-
-function toBlob(canvas, type, quality) {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      b => (b ? resolve(b) : reject(new Error("Failed to encode image."))),
-      type,
-      quality
-    );
-  });
-}
-
-async function processImageToWebp(
-  file,
-  { maxWidth = MAX_IMAGE_WIDTH, maxHeight = MAX_IMAGE_HEIGHT } = {}
-) {
-  assertImageFile(file);
-
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-  const srcW = bitmap.width;
-  const srcH = bitmap.height;
-  if (!srcW || !srcH) throw new Error("Invalid image.");
-
-  const scale = Math.min(1, maxWidth / srcW, maxHeight / srcH);
-  const dstW = Math.max(1, Math.round(srcW * scale));
-  const dstH = Math.max(1, Math.round(srcH * scale));
-
-  const srcCanvas = document.createElement("canvas");
-  srcCanvas.width = srcW;
-  srcCanvas.height = srcH;
-  const srcCtx = srcCanvas.getContext("2d", { alpha: false });
-  if (!srcCtx) throw new Error("Canvas unavailable.");
-  srcCtx.drawImage(bitmap, 0, 0);
-
-  const dstCanvas = document.createElement("canvas");
-  dstCanvas.width = dstW;
-  dstCanvas.height = dstH;
-
-  if (dstW !== srcW || dstH !== srcH) {
-    const pica = getPica();
-    await pica.resize(srcCanvas, dstCanvas, { quality: 3, alpha: false });
-  } else {
-    const dstCtx = dstCanvas.getContext("2d", { alpha: false });
-    if (!dstCtx) throw new Error("Canvas unavailable.");
-    dstCtx.drawImage(srcCanvas, 0, 0);
-  }
-
-  const isPng = file.type === "image/png";
-  const quality = clamp(isPng ? 0.9 : 0.8, 0.6, 0.95);
-  const webpBlob = await toBlob(dstCanvas, "image/webp", quality);
-  return { blob: webpBlob, width: dstW, height: dstH };
-}
-
-function setResult(resultDiv, { kind, text }) {
-  if (!resultDiv) return;
-  resultDiv.textContent = text;
-  resultDiv.className = "result";
-  if (kind) resultDiv.classList.add(kind);
-  resultDiv.style.display = "block";
-}
-
-function clearResult(resultDiv) {
-  if (!resultDiv) return;
-  resultDiv.style.display = "none";
-  resultDiv.className = "result";
-  resultDiv.textContent = "";
-}
+import {
+  STORAGE_BUCKET,
+  assertImageFile,
+  parsePublicUrlToObjectPath,
+  processImageToWebp,
+  shortIdHex8
+} from "../imageProcessing.js";
+import { clearResult, setResult } from "./formUtils.js";
 
 function titleForRow(row) {
   return row?.title_en || row?.title_r || row?.title_jp || "";
@@ -156,16 +57,6 @@ function createImageTile({ src, caption, linkHref }) {
   tile.appendChild(cap);
 
   return tile;
-}
-
-function parsePublicUrlToObjectPath(publicUrl, { bucket }) {
-  const u = new URL(publicUrl);
-  const marker = `/storage/v1/object/public/${bucket}/`;
-  const idx = u.pathname.indexOf(marker);
-  if (idx === -1) throw new Error("URL is not a public Storage URL for bucket: " + bucket);
-  const objectPath = u.pathname.slice(idx + marker.length);
-  if (!objectPath) throw new Error("Failed to parse object path from URL.");
-  return decodeURIComponent(objectPath);
 }
 
 function moveItem(arr, fromIdx, toIdx) {
@@ -468,4 +359,3 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 });
-

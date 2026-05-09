@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<!-- Browse shell: keep header, filter panel, and footer in sync with index-view.html. Recent sightings. Entry: /js/main.js. Styles: /css/main.css -->
+<!-- Browse shell (Recent sightings). Entry: /js/main.js. Styles: /css/main.css.
+     Shared header / filter panel / footer chunks live in /partials/ and are
+     rendered in place by `npm run build:html` (see /tools/build-html.mjs). -->
 <html lang="en">
 
 <head>
@@ -17,6 +19,7 @@
     <header>
       <h1>Anime Lighthouse Index</h1>
 
+      <!-- include: partials/browse-subtitle.html -->
       <div class="subtitle-bar">
         <div class="subtitle">
           <span id="view-recent" class="view-link"><a class="view-anchor" href="/">Recent</a></span>
@@ -26,7 +29,9 @@
 
         <button id="menu-toggle" class="burger">☰</button>
       </div>
+      <!-- /include -->
 
+      <!-- include: partials/browse-filter-panel.html -->
       <!-- hidden panel -->
       <div id="filter-panel" class="filter-panel hidden">
 
@@ -78,6 +83,7 @@
           </label>
         </div>
       </div>
+      <!-- /include -->
 
     </header>
 
@@ -88,6 +94,7 @@
   <footer class="site-footer" aria-label="Site preferences">
     <div class="container site-footer-inner">
       <div class="site-footer-controls">
+        <!-- include: partials/footer-theme-row.html -->
         <div class="site-footer-theme-row">
           <span class="site-footer-label" id="light-theme-label">Light theme</span>
           <button
@@ -102,6 +109,7 @@
             </span>
           </button>
         </div>
+        <!-- /include -->
         <label class="site-footer-title-lang">
           <span class="site-footer-label">Titles</span>
           <select id="title-mode" class="site-footer-select">
@@ -119,12 +127,14 @@
           </select>
         </label>
       </div>
+      <!-- include: partials/footer-links.html -->
       <div class="site-footer-links-wrap">
         <nav class="site-footer-links" aria-label="Site links">
           <a href="/">Home</a>
           <a href="/about">About</a>
         </nav>
       </div>
+      <!-- /include -->
     </div>
   </footer>
 
