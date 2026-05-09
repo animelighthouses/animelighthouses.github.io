@@ -104,11 +104,15 @@ async function fetchAniListById(id) {
   return json?.data?.Media ?? null;
 }
 
-/** Episode formatter: numeric -> `E<n>`, otherwise pass-through string (e.g. "OVA"). */
+/** Episode formatter: numeric -> `E<nn>` (0–9 padded to two digits), else pass-through (e.g. "OVA"). */
 function formatEpisode(ep) {
   if (ep == null || ep === "") return "";
   const s = String(ep);
-  return /^\d+$/.test(s) ? `E${s}` : s;
+  if (!/^\d+$/.test(s)) return s;
+  const n = parseInt(s, 10);
+  if (!Number.isFinite(n)) return s;
+  if (n >= 0 && n <= 9) return `E${String(n).padStart(2, "0")}`;
+  return `E${s}`;
 }
 
 /** Seconds-from-start (float) -> `hh:mm:ss`. */
@@ -864,6 +868,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     setImageSourceMode("upload");
     resetTraceUi();
     resetSauceUi();
+    // SauceNAO API key sits inside <form>; form.reset would clear it — keep field in sync with localStorage.
+    if (sauceKeyInput) sauceKeyInput.value = getSauceKey();
   }
 
   initDateAndImageDefaults();

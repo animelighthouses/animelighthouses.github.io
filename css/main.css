@@ -321,9 +321,37 @@ h2 {
 }
 
 .title {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 0.5rem;
+  align-items: start;
+  line-height: 1.25;
   font-weight: bold;
   font-size: 1.5rem;
   color: var(--text);
+  /* Line box height for child alignment (indicator cannot use lh — its own line-height is 0). */
+  --title-line-box-height: calc(1em * 1.25);
+}
+
+.title-text {
+  min-width: 0;
+}
+
+.card-multi-image-indicator {
+  color: var(--text-muted);
+  line-height: 0;
+  /* Centre icon in title line box (.title --title-line-box-height); extra em nudge aligns
+     optically with bold cap height vs SVG geometric box. */
+  margin-top: max(
+    0px,
+    calc(0.5 * var(--title-line-box-height) - 0.625rem + 0.0em)
+  );
+}
+
+.card-multi-image-indicator-svg {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .lighthouse-block {
@@ -704,20 +732,21 @@ button.burger:hover:not(:disabled) {
   background: var(--accent);
 }
 
-/* Footer link nav (right-aligned column; future links stack below) */
+/* Footer links: wrapper sits on the right of the footer row; nav stacks links left-aligned */
+
+.site-footer-links-wrap {
+  flex: 0 0 auto;
+}
 
 .site-footer-links {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: var(--space-4);
   font-size: 1rem;
   font-weight: 700;
-  /* text-transform: uppercase; */
   letter-spacing: 0.05em;
-  text-align: right;
-  flex: 0 0 auto;
-  /* padding: 0.5em 0em; */
+  text-align: left;
 }
 
 .site-footer .site-footer-links a,
@@ -736,9 +765,8 @@ button.burger:hover:not(:disabled) {
     align-items: stretch;
   }
 
-  .site-footer-links {
-    align-items: flex-start;
-    text-align: left;
+  .site-footer-links-wrap {
+    align-self: flex-end;
   }
 }
 

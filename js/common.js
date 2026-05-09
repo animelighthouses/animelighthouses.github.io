@@ -1,7 +1,7 @@
 /**
  * Shared UI for public browse pages (index.html Recent view and index-view.html).
  *
- * Exports: sighting card DOM (buildSightingCard), client-side filter/sort pipeline,
+ * Exports: sighting card DOM (buildSightingCard), trimmedDisplay, client-side filter/sort pipeline,
  * lighthouse dropdown population, burger filter panel, theme toggle, and shared
  * control bindings (search, title mode, sort, media type, real-only).
  *
@@ -48,6 +48,13 @@ export function formatSpottedDate(dateSpotted) {
     month: "long",
     year: "numeric"
   });
+}
+
+/** For display: non-empty trimmed string, or "" if null/undefined/whitespace-only. */
+export function trimmedDisplay(value) {
+  if (value == null) return "";
+  const s = String(value).trim();
+  return s;
 }
 
 // --- Scroll -------------------------------------------------------------------
@@ -341,32 +348,61 @@ export function buildSightingCard(entry, { titleMode }) {
   // TITLE
   const name = document.createElement("div");
   name.className = "title";
-  name.textContent =
+  const titleStr =
     entry?.[titleMode] || entry.title_en || entry.title_r || entry.title_jp || "";
+  const titleSpan = document.createElement("span");
+  titleSpan.className = "title-text";
+  titleSpan.textContent = titleStr;
+  name.appendChild(titleSpan);
+  const nImages = entry.image_link?.length ?? 0;
+  if (nImages > 1) {
+    const multi = document.createElement("span");
+    multi.className = "card-multi-image-indicator";
+    multi.setAttribute("aria-label", `${nImages} images`);
+    multi.title = `${nImages} images`;
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 -960 960 960");
+    svg.setAttribute("class", "card-multi-image-indicator-svg");
+    svg.setAttribute("aria-hidden", "true");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute(
+      "d",
+      "M360-400h400L622-580l-92 120-62-80-108 140Zm-40 160q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-480H320v480ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Zm160-720v480-480Z"
+    );
+    path.setAttribute("fill", "currentColor");
+    svg.appendChild(path);
+    multi.appendChild(svg);
+    name.appendChild(multi);
+  }
   card.appendChild(name);
 
   // EPISODE / TIMESTAMP / ANILIST
-  if (entry.episode || entry.timestamp || entry.anilist_link) {
+  const epPart = trimmedDisplay(entry.episode);
+  const tsPart = trimmedDisplay(entry.timestamp);
+  const aniUrl = trimmedDisplay(entry.anilist_link);
+  const hasEpTs = !!(epPart || tsPart);
+  const hasAnilist = !!aniUrl;
+
+  if (hasEpTs || hasAnilist) {
     const ep = document.createElement("div");
     ep.className = "meta-row";
 
-    if (entry.episode || entry.timestamp) {
+    if (hasEpTs) {
       const epText = document.createElement("span");
       epText.textContent =
-        `${entry.episode ?? "—"}` +
-        (entry.timestamp ? ` / ${entry.timestamp}` : "");
+        epPart && tsPart ? `${epPart} / ${tsPart}` : epPart || tsPart;
       ep.appendChild(epText);
     }
 
-    if ((entry.episode || entry.timestamp) && entry.anilist_link) {
+    if (hasEpTs && hasAnilist) {
       const dot = document.createElement("span");
       dot.textContent = " • ";
       dot.className = "dot-sep";
       ep.appendChild(dot);
     }
 
-    if (entry.anilist_link) {
-      ep.appendChild(createLink("AniList", entry.anilist_link, "images/favicon-al.png"));
+    if (hasAnilist) {
+      ep.appendChild(createLink("AniList", aniUrl, "images/favicon-al.png"));
     }
 
     card.appendChild(ep);

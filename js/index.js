@@ -16,7 +16,8 @@ import {
   closeLightboxIfOpen,
   filterAndSortSightings,
   populateLighthouseFilter,
-  scrollWindowToElementTop
+  scrollWindowToElementTop,
+  trimmedDisplay
 } from "./common.js";
 
 const app = document.getElementById("app");
@@ -59,6 +60,8 @@ function renderIndexView() {
     row.className = "index-row";
 
     const titleText = entry[state.titleMode] || entry.title_en;
+    const ep = trimmedDisplay(entry.episode);
+    const episodeSuffix = ep ? ` — ${ep}` : "";
     const lighthouse =
       entry.lighthouse_type === "real" && entry.lighthouses
         ? ` (${entry.lighthouses.name_en})`
@@ -66,7 +69,7 @@ function renderIndexView() {
 
     const title = document.createElement("div");
     title.className = "index-title";
-    title.textContent = titleText + lighthouse;
+    title.textContent = titleText + episodeSuffix + lighthouse;
 
     const details = document.createElement("div");
     details.className = "index-details";
