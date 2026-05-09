@@ -30,9 +30,6 @@ let allData = [];
 /** Keep preloaded Image objects alive (url -> Image). */
 const preloadImageByUrl = new Map();
 
-/** Second scroll snap after paging: wait for decodes up to this cap (ms). */
-const SCROLL_IMAGE_RECONCILE_MS = 550;
-
 /** @type {import("./browse/filters.js").BrowseState} */
 const state = {
   searchTerm: "",
@@ -81,12 +78,11 @@ function renderPage() {
   }
 
   const pageItems = processed.slice(start, end);
-  pageItems.forEach((entry, i) => {
+  pageItems.forEach(entry => {
     app.appendChild(
       buildSightingCard(entry, {
         titleMode: state.titleMode,
-        recentImageSlot: true,
-        heroFetchPriorityHigh: i === 0
+        recentImageSlot: true
       })
     );
   });
@@ -95,8 +91,7 @@ function renderPage() {
     app.appendChild(createPagination(processed.length, { scrollAfter: "top" }));
   }
 
-  // Preload the next page's hero images so navigation feels instant.
-  // Current page heroes load via eager <img> on each card (no duplicate Image() here).
+  // Preload the next page's hero URLs via Image(); current page uses lazy <img> in the slot.
   preloadPageHeroImages(processed, currentPage + 1);
 }
 
@@ -109,35 +104,6 @@ function scrollAfterPageChange(scrollAfter) {
     return;
   }
   scrollWindowToElementTop(app);
-}
-
-function waitImageSettled(img) {
-  if (img.complete) return Promise.resolve();
-  const decoded =
-    typeof img.decode === "function"
-      ? img.decode().catch(() => {})
-      : Promise.resolve();
-  const loaded = new Promise(resolve => {
-    img.addEventListener("load", resolve, { once: true });
-    img.addEventListener("error", resolve, { once: true });
-  });
-  return decoded.then(() => (img.complete ? Promise.resolve() : loaded));
-}
-
-async function reconcileScrollAfterHeroDecodes(scrollAfter) {
-  const imgs = app.querySelectorAll(".card-image-wrap img.cardimg");
-  if (!imgs.length) return;
-  await Promise.race([
-    Promise.all([...imgs].map(waitImageSettled)),
-    new Promise(resolve => setTimeout(resolve, SCROLL_IMAGE_RECONCILE_MS)),
-  ]);
-  scrollAfterPageChange(scrollAfter);
-}
-
-/** Initial snap then one more snap after hero images settle (bounded). */
-function scrollAfterPaginationChange(scrollAfter) {
-  scrollAfterPageChange(scrollAfter);
-  void reconcileScrollAfterHeroDecodes(scrollAfter);
 }
 
 /** Classic << < range > >> controls */
@@ -159,7 +125,7 @@ function createPagination(totalItems, { scrollAfter = "top" } = {}) {
   first.onclick = () => {
     currentPage = 0;
     renderPage();
-    scrollAfterPaginationChange(scrollAfter);
+    scrollAfterPageChange(scrollAfter);
   };
   wrapper.appendChild(first);
 
@@ -169,7 +135,7 @@ function createPagination(totalItems, { scrollAfter = "top" } = {}) {
   prev.onclick = () => {
     currentPage--;
     renderPage();
-    scrollAfterPaginationChange(scrollAfter);
+    scrollAfterPageChange(scrollAfter);
   };
   wrapper.appendChild(prev);
 
@@ -184,7 +150,7 @@ function createPagination(totalItems, { scrollAfter = "top" } = {}) {
   next.onclick = () => {
     currentPage++;
     renderPage();
-    scrollAfterPaginationChange(scrollAfter);
+    scrollAfterPageChange(scrollAfter);
   };
   wrapper.appendChild(next);
 
@@ -194,7 +160,7 @@ function createPagination(totalItems, { scrollAfter = "top" } = {}) {
   last.onclick = () => {
     currentPage = totalPages - 1;
     renderPage();
-    scrollAfterPaginationChange(scrollAfter);
+    scrollAfterPageChange(scrollAfter);
   };
   wrapper.appendChild(last);
 

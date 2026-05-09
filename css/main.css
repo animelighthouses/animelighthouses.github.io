@@ -278,23 +278,36 @@ h2 {
 .card--recent .card-image-wrap {
   width: 100%;
   max-width: 100%;
+  max-height: 80vh;
   aspect-ratio: 16 / 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: hidden;
   background: color-mix(in srgb, var(--surface) 88%, transparent);
 }
 
+/*
+ * Absolute hero avoids WebKit flex+replaced-element overflow; nav buttons stay
+ * position:absolute on this same wrap (after the img in DOM so they stack above).
+ */
 .card--recent .card-image-wrap .cardimg {
-  max-height: min(80vh, 100%);
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+  box-sizing: border-box;
   max-width: 100%;
+  max-height: 100%;
   width: auto;
   height: auto;
+  object-fit: contain;
+  z-index: 0;
 }
 
 .card-image-nav,
 .lightbox-nav {
   position: absolute;
+  z-index: 1;
   top: 0;
   bottom: 0;
   width: 10%;
@@ -338,9 +351,6 @@ h2 {
   right: 0;
 }
 
-.lightbox-nav {
-  z-index: 1;
-}
 
 .title {
   display: grid;
