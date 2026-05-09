@@ -25,6 +25,44 @@ label {
   color: var(--text-muted);
 }
 
+.label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-rem-sm);
+}
+
+.label-row label {
+  margin-bottom: 10px;
+}
+
+.label-toggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.label-toggle-btn {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.label-toggle-btn.is-active {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  color: var(--text);
+}
+
+.label-toggle-btn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-offset);
+}
+
 input,
 textarea,
 select {
@@ -109,6 +147,10 @@ button {
   gap: var(--space-rem-sm);
 }
 
+.anilist-row[hidden] {
+  display: none;
+}
+
 .anilist-row input {
   flex: 1;
 }
@@ -119,6 +161,10 @@ button {
   align-items: stretch;
   gap: var(--space-rem-sm);
   flex-wrap: wrap;
+}
+
+.image-input-row[hidden] {
+  display: none;
 }
 
 .image-input-row input[type="file"] {

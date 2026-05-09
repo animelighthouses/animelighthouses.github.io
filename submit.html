@@ -43,15 +43,26 @@
 
                 <div class="section">
                     <div class="field">
-                        <label>Image</label>
+                        <div class="label-row">
+                            <label>Image</label>
+                            <div class="label-toggle" role="group" aria-label="Image source">
+                                <button type="button" id="imageSourceUploadBtn" class="label-toggle-btn is-active">Upload</button>
+                                <button type="button" id="imageSourceUrlBtn" class="label-toggle-btn">URL</button>
+                            </div>
+                        </div>
                         <img id="imagePreview" class="image-preview" alt="Selected image preview" hidden />
-                        <div class="image-input-row">
+                        <div id="imageUploadRow" class="image-input-row">
                             <input
                                 name="image_file"
+                                id="imageFileInput"
                                 type="file"
                                 accept="image/jpeg,image/png,image/webp"
                             />
                             <button type="button" id="traceMoeFetchBtn" disabled>trace.moe</button>
+                        </div>
+                        <div id="imageUrlRow" class="anilist-row" hidden>
+                            <input id="imageUrlInput" type="url" inputmode="url" placeholder="https://…" />
+                            <button type="button" id="traceMoeFetchBtnUrl" disabled>trace.moe</button>
                         </div>
                         <div id="traceMoeMatch" class="trace-match" hidden>
                             <img id="traceMoeThumb" alt="trace.moe matched frame" />
@@ -61,6 +72,22 @@
                             <span id="traceMoeStatus" class="trace-status" aria-live="polite"></span>
                             <button type="button" id="traceMoeInsertBtn" hidden>Insert</button>
                             <button type="button" id="traceMoeClearBtn" hidden>Clear</button>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="anilist-row">
+                            <input id="sauceNaoApiKeyInput" type="password" autocomplete="off" spellcheck="false" placeholder="SauceNAO API key" />
+                            <button type="button" id="sauceNaoFetchBtn" disabled>SauceNAO</button>
+                        </div>
+                        <div id="sauceNaoMatch" class="trace-match" hidden>
+                            <img id="sauceNaoThumb" alt="SauceNAO matched frame" />
+                            <div id="sauceNaoMeta" class="trace-meta"></div>
+                        </div>
+                        <div class="trace-row">
+                            <span id="sauceNaoStatus" class="trace-status" aria-live="polite"></span>
+                            <button type="button" id="sauceNaoInsertBtn" hidden>Insert</button>
+                            <button type="button" id="sauceNaoClearBtn" hidden>Clear</button>
                         </div>
                     </div>
                 </div>

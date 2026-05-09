@@ -28,6 +28,16 @@ const TRACE_MOE_ENDPOINT = "https://api.trace.moe/search?anilistInfo=1&cutBorder
 const TRACE_HIGH = 0.9;
 const TRACE_LOW = 0.75;
 
+// SauceNAO (https://saucenao.com/user.php?page=search-api).
+const SAUCENAO_ENDPOINT = "https://saucenao.com/search.php";
+const SAUCENAO_STORAGE_KEY = "animelighthouse.saucenaoKey";
+// Anime* index (db=21) yields part (episode) + est_time (timestamp/duration) when available.
+const SAUCENAO_DB_ANIME = 21;
+// SauceNAO similarity is a percent string; these thresholds are tuned separately
+// from trace.moe similarity (0..1).
+const SAUCE_HIGH = 80;
+const SAUCE_LOW = 60;
+
 function getPica() {
   // Provided by <script src="https://cdn.jsdelivr.net/npm/pica@9.0.1/dist/pica.min.js"></script>
   const factory = globalThis?.pica;
@@ -129,6 +139,28 @@ async function queryTraceMoe(file) {
   const top = Array.isArray(json?.result) ? json.result[0] : null;
   if (!top) throw new Error("No match returned.");
   return top;
+}
+
+async function queryTraceMoeUrl(url) {
+  const u = String(url ?? "").trim();
+  if (!u) throw new Error("Please enter an image URL.");
+  const endpoint = `${TRACE_MOE_ENDPOINT}&url=${encodeURIComponent(u)}`;
+  const res = await fetch(endpoint);
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`trace.moe ${res.status}: ${txt || res.statusText}`);
+  }
+  const json = await res.json();
+  const top = Array.isArray(json?.result) ? json.result[0] : null;
+  if (!top) throw new Error("No match returned.");
+  return top;
+}
+
+function parseSauceEstTime(estTime) {
+  // SauceNAO Anime* format: "<timestamp> / <episode length>"
+  const raw = String(estTime ?? "");
+  const left = raw.split("/")[0]?.trim() ?? "";
+  return left;
 }
 
 function clamp(n, min, max) {
@@ -292,6 +324,87 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateTypeUI();
   if (isReal?.checked) await loadLighthousesOnce();
 
+  // --- Image source: Upload vs URL (lookup-only for URL mode) -----------------
+  const imageSourceUploadBtn = document.getElementById("imageSourceUploadBtn");
+  const imageSourceUrlBtn = document.getElementById("imageSourceUrlBtn");
+  const imageUploadRow = document.getElementById("imageUploadRow");
+  const imageUrlRow = document.getElementById("imageUrlRow");
+  const imageUrlInput = document.getElementById("imageUrlInput");
+  const imageFileInput = document.getElementById("imageFileInput") || form?.querySelector('[name="image_file"]');
+  const imagePreview = document.getElementById("imagePreview");
+
+  /** @type {"upload"|"url"} */
+  let imageSourceMode = "upload";
+  let previewObjectUrl = null;
+
+  function setImageSourceMode(mode) {
+    imageSourceMode = mode === "url" ? "url" : "upload";
+
+    if (imageUploadRow) imageUploadRow.toggleAttribute("hidden", imageSourceMode !== "upload");
+    if (imageUrlRow) imageUrlRow.toggleAttribute("hidden", imageSourceMode !== "url");
+
+    if (imageSourceUploadBtn) imageSourceUploadBtn.classList.toggle("is-active", imageSourceMode === "upload");
+    if (imageSourceUrlBtn) imageSourceUrlBtn.classList.toggle("is-active", imageSourceMode === "url");
+
+    // Switching modes invalidates any prior lookup state, but keeps the user's inputs.
+    resetTraceUi();
+    resetSauceUi();
+
+    // Update preview based on active mode.
+    if (imageSourceMode === "upload") {
+      const file = imageFileInput?.files?.[0] ?? null;
+      if (!file || !imagePreview) return;
+      // The change handler will update preview; don't duplicate work.
+    } else {
+      if (!imagePreview) return;
+      const url = String(imageUrlInput?.value ?? "").trim();
+      if (!url) {
+        imagePreview.setAttribute("hidden", "");
+        imagePreview.removeAttribute("src");
+        return;
+      }
+      imagePreview.src = url;
+      imagePreview.removeAttribute("hidden");
+    }
+  }
+
+  function getActiveImageSource() {
+    if (imageSourceMode === "url") {
+      return { kind: "url", url: String(imageUrlInput?.value ?? "").trim() };
+    }
+    return { kind: "file", file: imageFileInput?.files?.[0] ?? null };
+  }
+
+  imageSourceUploadBtn?.addEventListener("click", () => setImageSourceMode("upload"));
+  imageSourceUrlBtn?.addEventListener("click", () => setImageSourceMode("url"));
+
+  imageUrlInput?.addEventListener("input", () => {
+    resetTraceUi();
+    resetSauceUi();
+    const url = String(imageUrlInput.value ?? "").trim();
+    const hasUrl = Boolean(url);
+    const traceUrlBtn = document.getElementById("traceMoeFetchBtnUrl");
+    if (traceUrlBtn) traceUrlBtn.disabled = !hasUrl;
+    if (imagePreview) {
+      if (!hasUrl) {
+        imagePreview.setAttribute("hidden", "");
+        imagePreview.removeAttribute("src");
+      } else {
+        imagePreview.src = url;
+        imagePreview.removeAttribute("hidden");
+      }
+    }
+    // Sauce button enablement depends on key + source; computed below.
+    updateSauceEnabled();
+  });
+
+  imagePreview?.addEventListener("error", () => {
+    if (imageSourceMode === "url") {
+      // Keep the user in URL mode, but make failure visible without blocking.
+      setTraceStatus("Image preview failed to load. URL may be invalid or blocked by CORS.", "warn");
+    }
+  });
+
   // --- AniList: cache media_id / media_type for submit payload ---------------
   const anilistInput = document.getElementById("anilistInput");
   const fetchBtn = document.getElementById("anilistFetchBtn");
@@ -342,6 +455,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Other fields (anilist_link / cachedMediaId / cachedMediaType / titles)
   // are only ever set if currently empty/null — never overwritten.
   const traceBtn = document.getElementById("traceMoeFetchBtn");
+  const traceUrlBtn = document.getElementById("traceMoeFetchBtnUrl");
   const traceInsertBtn = document.getElementById("traceMoeInsertBtn");
   const traceClearBtn = document.getElementById("traceMoeClearBtn");
   const traceStatus = document.getElementById("traceMoeStatus");
@@ -408,7 +522,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     clearTraceMatch();
     hideTraceInsertBtn();
     hideTraceClearBtn();
-    if (traceBtn) traceBtn.disabled = !imageFileInput?.files?.[0];
+    const src = getActiveImageSource();
+    const hasSource = src.kind === "file" ? Boolean(src.file) : Boolean(src.url);
+    if (traceBtn) traceBtn.disabled = !(imageSourceMode === "upload" && hasSource);
+    if (traceUrlBtn) traceUrlBtn.disabled = !(imageSourceMode === "url" && hasSource);
   }
 
   // Clear dismisses the trace.moe interface (status / match panel / Insert)
@@ -455,17 +572,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  traceBtn?.addEventListener("click", async () => {
-    const file = imageFileInput?.files?.[0];
-    if (!file) return;
+  async function runTraceMoeLookup() {
+    const src = getActiveImageSource();
+    if (src.kind === "file" && !src.file) return;
+    if (src.kind === "url" && !src.url) return;
 
-    traceBtn.disabled = true;
+    if (traceBtn) traceBtn.disabled = true;
+    if (traceUrlBtn) traceUrlBtn.disabled = true;
     hideTraceInsertBtn();
     clearTraceMatch();
     setTraceStatus("Identifying…");
 
     try {
-      const top = await queryTraceMoe(file);
+      const top = src.kind === "file" ? await queryTraceMoe(src.file) : await queryTraceMoeUrl(src.url);
       const conf = Number(top.similarity ?? 0);
       const pct = (conf * 100).toFixed(1);
       const titleLabel =
@@ -503,14 +622,238 @@ document.addEventListener("DOMContentLoaded", async () => {
       setTraceStatus(`Lookup failed: ${err?.message ?? "unknown error"}.`, "fail");
       showTraceClearBtn();
     } finally {
-      traceBtn.disabled = !imageFileInput?.files?.[0];
+      resetTraceUi();
+    }
+  }
+
+  traceBtn?.addEventListener("click", runTraceMoeLookup);
+  traceUrlBtn?.addEventListener("click", runTraceMoeLookup);
+
+  // --- SauceNAO: backup identification (Anime* index only) --------------------
+  const sauceKeyInput = document.getElementById("sauceNaoApiKeyInput");
+  const sauceBtn = document.getElementById("sauceNaoFetchBtn");
+  const sauceInsertBtn = document.getElementById("sauceNaoInsertBtn");
+  const sauceClearBtn = document.getElementById("sauceNaoClearBtn");
+  const sauceStatus = document.getElementById("sauceNaoStatus");
+  const sauceMatch = document.getElementById("sauceNaoMatch");
+  const sauceThumb = document.getElementById("sauceNaoThumb");
+  const sauceMeta = document.getElementById("sauceNaoMeta");
+
+  function setSauceStatus(text, state = "") {
+    if (!sauceStatus) return;
+    sauceStatus.textContent = text ?? "";
+    if (state) sauceStatus.dataset.state = state;
+    else delete sauceStatus.dataset.state;
+  }
+
+  function clearSauceMatch() {
+    if (sauceMatch) {
+      sauceMatch.setAttribute("hidden", "");
+      delete sauceMatch.dataset.tier;
+    }
+    if (sauceThumb) sauceThumb.removeAttribute("src");
+    if (sauceMeta) sauceMeta.textContent = "";
+  }
+
+  function showSauceMatch(top, tier) {
+    if (!sauceMatch || !sauceThumb || !sauceMeta) return;
+    if (top?.header?.thumbnail) sauceThumb.src = top.header.thumbnail;
+    const source = top?.data?.source ?? "?";
+    const epLabel = formatEpisode(top?.data?.part);
+    const ts = parseSauceEstTime(top?.data?.est_time);
+    const sim = String(top?.header?.similarity ?? "").trim();
+    const parts = [source];
+    if (epLabel) parts.push(epLabel);
+    if (ts) parts.push(ts);
+    if (sim) parts.push(`${sim}%`);
+    sauceMeta.textContent = parts.join(" · ");
+    sauceMatch.dataset.tier = tier;
+    sauceMatch.removeAttribute("hidden");
+  }
+
+  function hideSauceInsertBtn() {
+    if (!sauceInsertBtn) return;
+    sauceInsertBtn.setAttribute("hidden", "");
+    sauceInsertBtn.onclick = null;
+  }
+
+  function showSauceInsertBtn(onClick) {
+    if (!sauceInsertBtn) return;
+    sauceInsertBtn.removeAttribute("hidden");
+    sauceInsertBtn.onclick = () => {
+      hideSauceInsertBtn();
+      onClick();
+    };
+  }
+
+  function showSauceClearBtn() {
+    if (sauceClearBtn) sauceClearBtn.removeAttribute("hidden");
+  }
+
+  function hideSauceClearBtn() {
+    if (sauceClearBtn) sauceClearBtn.setAttribute("hidden", "");
+  }
+
+  function getSauceKey() {
+    try {
+      return localStorage.getItem(SAUCENAO_STORAGE_KEY) || "";
+    } catch {
+      return "";
+    }
+  }
+
+  function setSauceKey(value) {
+    const v = String(value ?? "").trim();
+    try {
+      if (v) localStorage.setItem(SAUCENAO_STORAGE_KEY, v);
+      else localStorage.removeItem(SAUCENAO_STORAGE_KEY);
+    } catch (_) {}
+  }
+
+  function updateSauceEnabled() {
+    const src = getActiveImageSource();
+    const hasSource = src.kind === "file" ? Boolean(src.file) : Boolean(src.url);
+    const hasKey = Boolean(getSauceKey());
+    if (sauceBtn) sauceBtn.disabled = !(hasSource && hasKey);
+  }
+
+  function resetSauceUi() {
+    setSauceStatus("");
+    clearSauceMatch();
+    hideSauceInsertBtn();
+    hideSauceClearBtn();
+    updateSauceEnabled();
+  }
+
+  sauceClearBtn?.addEventListener("click", resetSauceUi);
+
+  // Initialize key input from localStorage.
+  if (sauceKeyInput) sauceKeyInput.value = getSauceKey();
+  sauceKeyInput?.addEventListener("input", () => {
+    setSauceKey(sauceKeyInput.value);
+    resetSauceUi();
+  });
+
+  async function querySauceNao(source) {
+    const key = getSauceKey();
+    if (!key) throw new Error("Missing SauceNAO API key.");
+
+    const params = new URLSearchParams();
+    params.set("output_type", "2");
+    params.set("api_key", key);
+    params.set("db", String(SAUCENAO_DB_ANIME));
+    params.set("numres", "3");
+    params.set("dedupe", "2");
+
+    if (source.kind === "url") {
+      params.set("url", source.url);
+      const res = await fetch(`${SAUCENAO_ENDPOINT}?${params.toString()}`);
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(`SauceNAO ${res.status}: ${txt || res.statusText}`);
+      }
+      return await res.json();
+    }
+
+    // Upload mode: multipart POST.
+    const fd = new FormData();
+    fd.append("file", source.file, source.file?.name || "image");
+
+    const res = await fetch(`${SAUCENAO_ENDPOINT}?${params.toString()}`, {
+      method: "POST",
+      body: fd
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(`SauceNAO ${res.status}: ${txt || res.statusText}`);
+    }
+    return await res.json();
+  }
+
+  function applySauceResult(top) {
+    const epEl = form?.querySelector('[name="episode"]');
+    const tsEl = form?.querySelector('[name="timestamp"]');
+
+    const epRaw = top?.data?.part ?? null;
+    const ep = formatEpisode(epRaw);
+    const ts = parseSauceEstTime(top?.data?.est_time);
+
+    if (epEl) epEl.value = ep;
+    if (tsEl) tsEl.value = ts;
+
+    const anilistId = top?.data?.anilist_id ?? null;
+    if (anilistId) {
+      if (cachedMediaId == null) cachedMediaId = String(anilistId);
+      if (cachedMediaType == null) cachedMediaType = "anime";
+      if (anilistInput && !anilistInput.value.trim()) {
+        anilistInput.value = `https://anilist.co/anime/${anilistId}`;
+      }
+      // After accept, auto-run AniList fetch to fill blank titles and refine media_type.
+      fetchAniListById(anilistId)
+        .then(media => {
+          if (!media) return;
+          const titleEnEl = form?.querySelector('[name="title_en"]');
+          const titleREl = form?.querySelector('[name="title_r"]');
+          const titleJpEl = form?.querySelector('[name="title_jp"]');
+          const isEmpty = el => !el || !el.value.trim();
+          if (isEmpty(titleEnEl)) {
+            titleEnEl.value = media.title.english || media.title.romaji || "";
+          }
+          if (isEmpty(titleREl)) titleREl.value = media.title.romaji || "";
+          if (isEmpty(titleJpEl)) titleJpEl.value = media.title.native || "";
+          if (media.type) cachedMediaType = String(media.type).toLowerCase();
+        })
+        .catch(e => console.warn("AniList auto-fetch failed:", e));
+    }
+  }
+
+  sauceBtn?.addEventListener("click", async () => {
+    const src = getActiveImageSource();
+    if (src.kind === "file" && !src.file) return;
+    if (src.kind === "url" && !src.url) return;
+
+    if (sauceBtn) sauceBtn.disabled = true;
+    hideSauceInsertBtn();
+    clearSauceMatch();
+    setSauceStatus("Searching…");
+
+    try {
+      const json = await querySauceNao(src);
+      const top = Array.isArray(json?.results) ? json.results[0] : null;
+      if (!top) throw new Error("No results returned.");
+
+      const sim = Number.parseFloat(top?.header?.similarity ?? "0");
+      const isHigh = sim >= SAUCE_HIGH;
+      const isOk = sim >= SAUCE_LOW;
+
+      if (!isOk) {
+        showSauceMatch(top, "low");
+        setSauceStatus(`Low confidence: ${sim.toFixed(2)}%.`, "fail");
+        showSauceClearBtn();
+        return;
+      }
+
+      showSauceMatch(top, isHigh ? "high" : "mid");
+      setSauceStatus(
+        isHigh ? `Strong match: ${sim.toFixed(2)}%.` : `Possible match: ${sim.toFixed(2)}%.`,
+        isHigh ? "ok" : "warn"
+      );
+      showSauceInsertBtn(() => {
+        applySauceResult(top);
+        setSauceStatus(`Inserted: ${sim.toFixed(2)}%.`, "ok");
+      });
+      showSauceClearBtn();
+    } catch (err) {
+      console.error(err);
+      setSauceStatus(`Lookup failed: ${err?.message ?? "unknown error"}.`, "fail");
+      showSauceClearBtn();
+    } finally {
+      updateSauceEnabled();
     }
   });
 
   // --- Date spotted + image defaults -----------------------------------------
   const dateSpottedInput = form?.querySelector('[name="date_spotted"]');
-  const imageFileInput = form?.querySelector('[name="image_file"]');
-  const imagePreview = document.getElementById("imagePreview");
 
   function initDateAndImageDefaults() {
     if (dateSpottedInput) dateSpottedInput.value = todayYmd();
@@ -519,12 +862,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       imagePreview.setAttribute("hidden", "");
       imagePreview.removeAttribute("src");
     }
+    if (imageUrlInput) imageUrlInput.value = "";
+    setImageSourceMode("upload");
     resetTraceUi();
+    resetSauceUi();
   }
 
   initDateAndImageDefaults();
 
-  let previewObjectUrl = null;
   imageFileInput?.addEventListener("change", () => {
     const file = imageFileInput?.files?.[0] ?? null;
     if (previewObjectUrl) {
@@ -534,6 +879,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // New / cleared file invalidates any previous trace.moe lookup.
     resetTraceUi();
+    resetSauceUi();
 
     if (!file || !imagePreview) return;
     try {
@@ -544,13 +890,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       imagePreview.setAttribute("hidden", "");
       imagePreview.removeAttribute("src");
       resetTraceUi();
+      resetSauceUi();
       return;
     }
 
     previewObjectUrl = URL.createObjectURL(file);
     imagePreview.src = previewObjectUrl;
     imagePreview.removeAttribute("hidden");
-    if (traceBtn) traceBtn.disabled = false;
+    if (imageSourceMode === "upload" && traceBtn) traceBtn.disabled = false;
+    updateSauceEnabled();
   });
 
   // --- Submit to Supabase -----------------------------------------------------
@@ -581,34 +929,34 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
       const file = imageFileInput?.files?.[0] ?? null;
-      if (file) {
-        const ymd = dateSpottedInput?.value ?? todayYmd();
-        const shortId = shortIdHex8();
-        const objectPath = cachedMediaId
-          ? `sightings/${ymd}_${cachedMediaId}_${shortId}.webp`
-          : `sightings/${ymd}_${shortId}.webp`;
-
-        const processed = await processImageToWebp(file);
-
-        const { error: uploadError } = await supabaseClient.storage
-          .from(STORAGE_BUCKET)
-          .upload(objectPath, processed.blob, {
-            contentType: "image/webp",
-            upsert: false
-          });
-        if (uploadError) throw uploadError;
-
-        const { data: publicData } = supabaseClient.storage
-          .from(STORAGE_BUCKET)
-          .getPublicUrl(objectPath);
-
-        const publicUrl = publicData?.publicUrl;
-        if (!publicUrl) throw new Error("Failed to generate public URL.");
-
-        formData.image_link = [publicUrl];
-      } else {
-        formData.image_link = null;
+      if (!file) {
+        throw new Error("Please upload an image before submitting.");
       }
+
+      const ymd = dateSpottedInput?.value ?? todayYmd();
+      const shortId = shortIdHex8();
+      const objectPath = cachedMediaId
+        ? `sightings/${ymd}_${cachedMediaId}_${shortId}.webp`
+        : `sightings/${ymd}_${shortId}.webp`;
+
+      const processed = await processImageToWebp(file);
+
+      const { error: uploadError } = await supabaseClient.storage
+        .from(STORAGE_BUCKET)
+        .upload(objectPath, processed.blob, {
+          contentType: "image/webp",
+          upsert: false
+        });
+      if (uploadError) throw uploadError;
+
+      const { data: publicData } = supabaseClient.storage
+        .from(STORAGE_BUCKET)
+        .getPublicUrl(objectPath);
+
+      const publicUrl = publicData?.publicUrl;
+      if (!publicUrl) throw new Error("Failed to generate public URL.");
+
+      formData.image_link = [publicUrl];
 
       const { data, error } = await supabaseClient
         .from("sightings")
