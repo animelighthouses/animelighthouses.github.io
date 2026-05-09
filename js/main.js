@@ -2,7 +2,7 @@
  * Recent sightings view for index.html: paginated cards and shared filter panel.
  *
  * Fetches all sightings once (with cache in dataservice), filters/sorts client-side
- * via common.js, and marks the Recent/Index tab via nav.js.
+ * via js/browse/, and marks the Recent/Index tab via nav.js.
  */
 
 import { fetchSightings } from "./dataservice.js";
@@ -17,18 +17,20 @@ import {
   filterAndSortSightings,
   populateLighthouseFilter,
   scrollWindowToElementTop
-} from "./common.js";
+} from "./browse/index.js";
 
 const app = document.getElementById("app");
 
 /** Zero-based page index; reset when filters/search/sort change */
 let currentPage = 0;
 const pageSize = 10;
+/** @type {import("./dataservice.js").SightingRow[]} */
 let allData = [];
 
 /** Keep preloaded Image objects alive (url -> Image). */
 const preloadImageByUrl = new Map();
 
+/** @type {import("./browse/filters.js").BrowseState} */
 const state = {
   searchTerm: "",
   titleMode: readStoredTitleMode("title_r"),
@@ -37,7 +39,6 @@ const state = {
   showManga: true,
   realOnly: false,
   sortMode: "newest",
-  /** When set, only sightings with this lighthouse_id (merged JSON from Supabase) */
   lighthouseId: null
 };
 

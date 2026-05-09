@@ -641,6 +641,15 @@ button.burger:hover:not(:disabled) {
   margin-bottom: 0;
 }
 
+/* Inert spacer used on About to preserve footer-controls column height
+   (no Titles / Page Nav selects on that page). Height matches a single
+   select control row so the footer links column aligns with browse pages. */
+.site-footer-spacer {
+  display: inline-block;
+  min-height: 2.25rem;
+  width: 0;
+}
+
 .site-footer-theme-row {
   display: inline-flex;
   align-items: center;

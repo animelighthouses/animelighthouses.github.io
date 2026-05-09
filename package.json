@@ -1,0 +1,12 @@
+{
+  "name": "animelighthouses.github.io",
+  "private": true,
+  "type": "module",
+  "description": "Static site for the Anime Lighthouse Index. No bundler — package.json exists only to enable the local HTML partial composer.",
+  "scripts": {
+    "build:html": "node tools/build-html.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,8 +1,9 @@
 /**
  * Compact index view for index-view.html: one row per sighting, expand for full card.
  *
- * Reuses buildSightingCard from common.js (same card as Recent). Collapsed rows defer
- * creating card DOM and images until first expand to avoid loading every image at once.
+ * Reuses buildSightingCard from js/browse/card.js (same card as Recent). Collapsed
+ * rows defer creating card DOM and images until first expand to avoid loading every
+ * image at once.
  */
 
 import { fetchSightings } from "./dataservice.js";
@@ -18,11 +19,14 @@ import {
   populateLighthouseFilter,
   scrollWindowToElementTop,
   trimmedDisplay
-} from "./common.js";
+} from "./browse/index.js";
 
 const app = document.getElementById("app");
 
+/** @type {import("./dataservice.js").SightingRow[]} */
 let allData = [];
+
+/** @type {import("./browse/filters.js").BrowseState} */
 const state = {
   searchTerm: "",
   titleMode: readStoredTitleMode("title_r"),

@@ -1,0 +1,51 @@
+<!-- hidden panel -->
+<div id="filter-panel" class="filter-panel hidden">
+
+  <!-- Search -->
+  <div class="panel-section">
+    <input type="text" id="search" class="search-input" placeholder="Search..." />
+  </div>
+
+  <!-- Filters  -->
+  <div class="panel-section">
+    <div class="panel-header">Filters</div>
+
+    <!-- Media type -->
+    <label class="control">
+      <div class="checkbox-group">
+        <label class="checkbox">
+          <input type="checkbox" id="filter-anime" checked />
+          <span>Anime</span>
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" id="filter-manga" checked />
+          <span>Manga</span>
+        </label>
+      </div>
+    </label>
+
+    <!-- Real only -->
+    <label class="checkbox">
+      <input type="checkbox" id="real-only" />
+      <span>Real lighthouses only</span>
+    </label>
+
+    <label class="control">
+      <span class="filter-dropdown-label">Lighthouse</span>
+      <select id="lighthouse-filter">
+        <option value="">All lighthouses</option>
+      </select>
+    </label>
+
+    <label class="control">
+      <span class="filter-dropdown-label">Sort order</span>
+      <select id="sort-mode">
+        <option value="newest">Most recent first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="az">A–Z</option>
+        <option value="za">Z–A</option>
+      </select>
+    </label>
+  </div>
+</div>

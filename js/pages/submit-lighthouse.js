@@ -9,12 +9,7 @@ import {
   handleSubmitAuthButtonClick,
   setFormEnabledFromSession
 } from "./submitAuth.js";
-
-function nullifyEmptyStrings(formData) {
-  Object.keys(formData).forEach(k => {
-    if (formData[k] === "") formData[k] = null;
-  });
-}
+import { clearResult, nullifyEmptyStrings, setResult } from "./formUtils.js";
 
 /**
  * First path segment after hostname: lighthouse-japan.com/[prefecture]/...
@@ -88,10 +83,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   form?.addEventListener("submit", async e => {
     e.preventDefault();
 
-    if (resultDiv) {
-      resultDiv.style.display = "none";
-      resultDiv.className = "result";
-    }
+    clearResult(resultDiv);
 
     const formData = Object.fromEntries(new FormData(form));
     nullifyEmptyStrings(formData);
@@ -103,20 +95,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       .single();
 
     if (error) {
-      if (resultDiv) {
-        resultDiv.textContent = "Error: " + error.message;
-        resultDiv.classList.add("error");
-        resultDiv.style.display = "block";
-      }
+      setResult(resultDiv, { kind: "error", text: "Error: " + error.message });
       return;
     }
 
-    const id = data.id;
-    if (resultDiv) {
-      resultDiv.textContent = `Lighthouse added successfully. ID: ${id}`;
-      resultDiv.classList.add("success");
-      resultDiv.style.display = "block";
-    }
+    setResult(resultDiv, {
+      kind: "success",
+      text: `Lighthouse added successfully. ID: ${data.id}`
+    });
 
     form.reset();
   });

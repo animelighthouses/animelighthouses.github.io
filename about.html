@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<!-- Public about page. Header (without burger) + footer match index.html / index-view.html. Entry: /js/pages/about.js -->
+<!-- Public about page. Entry: /js/pages/about.js. Styles: /css/main.css.
+     Shared header (without burger) + footer chunks live in /partials/ and are
+     rendered in place by `npm run build:html` (see /tools/build-html.mjs). -->
 <html lang="en">
 
 <head>
@@ -16,6 +18,7 @@
     <header>
       <h1>Anime Lighthouse Index</h1>
 
+      <!-- include: partials/browse-subtitle-no-burger.html -->
       <div class="subtitle-bar">
         <div class="subtitle">
           <span id="view-recent" class="view-link"><a class="view-anchor" href="/">Recent</a></span>
@@ -23,6 +26,7 @@
           <span id="view-index" class="view-link"><a class="view-anchor" href="/index-view">Index</a></span>
         </div>
       </div>
+      <!-- /include -->
     </header>
 
     <main class="content-box about-content">
@@ -41,6 +45,7 @@
   <footer class="site-footer" aria-label="Site preferences">
     <div class="container site-footer-inner">
       <div class="site-footer-controls">
+        <!-- include: partials/footer-theme-row.html -->
         <div class="site-footer-theme-row">
           <span class="site-footer-label" id="light-theme-label">Light theme</span>
           <button
@@ -55,19 +60,17 @@
             </span>
           </button>
         </div>
-        <label class="site-footer-title-lang" aria-hidden="true" style="visibility: hidden">
-          <span class="site-footer-label">Titles</span>
-          <select class="site-footer-select" tabindex="-1">
-            <option value="title_en">English</option>
-          </select>
-        </label>
+        <!-- /include -->
+        <span class="site-footer-title-lang site-footer-spacer" aria-hidden="true"></span>
       </div>
+      <!-- include: partials/footer-links.html -->
       <div class="site-footer-links-wrap">
         <nav class="site-footer-links" aria-label="Site links">
           <a href="/">Home</a>
           <a href="/about">About</a>
         </nav>
       </div>
+      <!-- /include -->
     </div>
   </footer>
 
