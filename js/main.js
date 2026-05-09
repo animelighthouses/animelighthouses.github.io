@@ -30,6 +30,9 @@ let allData = [];
 /** Keep preloaded Image objects alive (url -> Image). */
 const preloadImageByUrl = new Map();
 
+/** Second scroll snap after paging: wait for decodes up to this cap (ms). */
+const SCROLL_IMAGE_RECONCILE_MS = 550;
+
 /** @type {import("./browse/filters.js").BrowseState} */
 const state = {
   searchTerm: "",
@@ -78,8 +81,14 @@ function renderPage() {
   }
 
   const pageItems = processed.slice(start, end);
-  pageItems.forEach(entry => {
-    app.appendChild(buildSightingCard(entry, { titleMode: state.titleMode }));
+  pageItems.forEach((entry, i) => {
+    app.appendChild(
+      buildSightingCard(entry, {
+        titleMode: state.titleMode,
+        recentImageSlot: true,
+        heroFetchPriorityHigh: i === 0
+      })
+    );
   });
 
   if (shouldBottom) {
@@ -87,7 +96,48 @@ function renderPage() {
   }
 
   // Preload the next page's hero images so navigation feels instant.
+  // Current page heroes load via eager <img> on each card (no duplicate Image() here).
   preloadPageHeroImages(processed, currentPage + 1);
+}
+
+function scrollAfterPageChange(scrollAfter) {
+  if (scrollAfter === "lastCardTop") {
+    const cards = app.querySelectorAll(".card");
+    const lastCard = cards.length ? cards[cards.length - 1] : null;
+    if (lastCard) scrollWindowToElementTop(lastCard);
+    else scrollWindowToElementTop(app);
+    return;
+  }
+  scrollWindowToElementTop(app);
+}
+
+function waitImageSettled(img) {
+  if (img.complete) return Promise.resolve();
+  const decoded =
+    typeof img.decode === "function"
+      ? img.decode().catch(() => {})
+      : Promise.resolve();
+  const loaded = new Promise(resolve => {
+    img.addEventListener("load", resolve, { once: true });
+    img.addEventListener("error", resolve, { once: true });
+  });
+  return decoded.then(() => (img.complete ? Promise.resolve() : loaded));
+}
+
+async function reconcileScrollAfterHeroDecodes(scrollAfter) {
+  const imgs = app.querySelectorAll(".card-image-wrap img.cardimg");
+  if (!imgs.length) return;
+  await Promise.race([
+    Promise.all([...imgs].map(waitImageSettled)),
+    new Promise(resolve => setTimeout(resolve, SCROLL_IMAGE_RECONCILE_MS)),
+  ]);
+  scrollAfterPageChange(scrollAfter);
+}
+
+/** Initial snap then one more snap after hero images settle (bounded). */
+function scrollAfterPaginationChange(scrollAfter) {
+  scrollAfterPageChange(scrollAfter);
+  void reconcileScrollAfterHeroDecodes(scrollAfter);
 }
 
 /** Classic << < range > >> controls */
@@ -103,24 +153,13 @@ function createPagination(totalItems, { scrollAfter = "top" } = {}) {
   const wrapper = document.createElement("div");
   wrapper.className = "pagination";
 
-  const scrollAfterRender = () => {
-    if (scrollAfter === "lastCardTop") {
-      const cards = app.querySelectorAll(".card");
-      const lastCard = cards.length ? cards[cards.length - 1] : null;
-      if (lastCard) scrollWindowToElementTop(lastCard);
-      else scrollWindowToElementTop(app);
-      return;
-    }
-    scrollWindowToElementTop(app);
-  };
-
   const first = document.createElement("button");
   first.textContent = "<<";
   first.disabled = currentPage === 0;
   first.onclick = () => {
     currentPage = 0;
     renderPage();
-    scrollAfterRender();
+    scrollAfterPaginationChange(scrollAfter);
   };
   wrapper.appendChild(first);
 
@@ -130,7 +169,7 @@ function createPagination(totalItems, { scrollAfter = "top" } = {}) {
   prev.onclick = () => {
     currentPage--;
     renderPage();
-    scrollAfterRender();
+    scrollAfterPaginationChange(scrollAfter);
   };
   wrapper.appendChild(prev);
 
@@ -145,7 +184,7 @@ function createPagination(totalItems, { scrollAfter = "top" } = {}) {
   next.onclick = () => {
     currentPage++;
     renderPage();
-    scrollAfterRender();
+    scrollAfterPaginationChange(scrollAfter);
   };
   wrapper.appendChild(next);
 
@@ -155,7 +194,7 @@ function createPagination(totalItems, { scrollAfter = "top" } = {}) {
   last.onclick = () => {
     currentPage = totalPages - 1;
     renderPage();
-    scrollAfterRender();
+    scrollAfterPaginationChange(scrollAfter);
   };
   wrapper.appendChild(last);
 

@@ -270,6 +270,28 @@ h2 {
   margin: 0;
 }
 
+/*
+ * Recent view (index.html) only: reserve a stable slot before the hero decodes so
+ * paging scroll targets do not drift as earlier cards’ images inflate layout.
+ * Class .card--recent is toggled by buildSightingCard (see js/browse/card.js).
+ */
+.card--recent .card-image-wrap {
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+
+.card--recent .card-image-wrap .cardimg {
+  max-height: min(80vh, 100%);
+  max-width: 100%;
+  width: auto;
+  height: auto;
+}
+
 .card-image-nav,
 .lightbox-nav {
   position: absolute;

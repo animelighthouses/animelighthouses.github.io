@@ -62,7 +62,10 @@ export function trimmedDisplay(value) {
  * for the current image index and is reused by the lightbox while open so card
  * thumbnail and lightbox stay in sync.
  */
-function buildCardImageBlock(entry) {
+function buildCardImageBlock(
+  entry,
+  { heroLoading = "lazy", heroFetchPriorityHigh = false } = {}
+) {
   const urls = (entry.image_link || []).slice();
   let index = 0;
 
@@ -72,8 +75,11 @@ function buildCardImageBlock(entry) {
   const cardImg = document.createElement("img");
   cardImg.className = "cardimg";
   cardImg.src = urls[0];
-  cardImg.loading = "lazy";
+  cardImg.loading = heroLoading === "eager" ? "eager" : "lazy";
   cardImg.decoding = "async";
+  if (heroFetchPriorityHigh) {
+    cardImg.fetchPriority = "high";
+  }
 
   const prevBtn = document.createElement("button");
   prevBtn.type = "button";
@@ -152,9 +158,15 @@ function buildCardImageBlock(entry) {
   return { wrap, controller };
 }
 
-export function buildSightingCard(entry, { titleMode }) {
+export function buildSightingCard(
+  entry,
+  { titleMode, recentImageSlot = false, heroFetchPriorityHigh = false } = {}
+) {
   const card = document.createElement("div");
   card.className = "card";
+  if (recentImageSlot) {
+    card.classList.add("card--recent");
+  }
 
   // DATE
   const date = document.createElement("div");
@@ -163,7 +175,10 @@ export function buildSightingCard(entry, { titleMode }) {
 
   // IMAGE
   if (entry.image_link?.length) {
-    const { wrap } = buildCardImageBlock(entry);
+    const { wrap } = buildCardImageBlock(entry, {
+      heroLoading: recentImageSlot ? "eager" : "lazy",
+      heroFetchPriorityHigh
+    });
     card.appendChild(wrap);
   }
 
