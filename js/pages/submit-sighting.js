@@ -738,36 +738,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     const key = getSauceKey();
     if (!key) throw new Error("Missing SauceNAO API key.");
 
-    const params = new URLSearchParams();
-    params.set("output_type", "2");
-    params.set("api_key", key);
-    params.set("db", String(SAUCENAO_DB_ANIME));
-    params.set("numres", "3");
-    params.set("dedupe", "2");
+    const payload = {
+      apiKey: key,
+      db: SAUCENAO_DB_ANIME,
+      numres: 3,
+      dedupe: 2
+    };
 
     if (source.kind === "url") {
-      params.set("url", source.url);
-      const res = await fetch(`${SAUCENAO_ENDPOINT}?${params.toString()}`);
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        throw new Error(`SauceNAO ${res.status}: ${txt || res.statusText}`);
-      }
-      return await res.json();
+      const { data, error } = await supabaseClient.functions.invoke("saucenao-proxy", {
+        body: { ...payload, url: source.url }
+      });
+      if (error) throw error;
+      return data;
     }
 
-    // Upload mode: multipart POST.
-    const fd = new FormData();
-    fd.append("file", source.file, source.file?.name || "image");
-
-    const res = await fetch(`${SAUCENAO_ENDPOINT}?${params.toString()}`, {
-      method: "POST",
-      body: fd
+    // Upload mode: send image bytes as a base64 data URL to the edge function.
+    const imageBase64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Failed to read image file."));
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.readAsDataURL(source.file);
     });
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      throw new Error(`SauceNAO ${res.status}: ${txt || res.statusText}`);
-    }
-    return await res.json();
+
+    const { data, error } = await supabaseClient.functions.invoke("saucenao-proxy", {
+      body: { ...payload, imageBase64 }
+    });
+    if (error) throw error;
+    return data;
   }
 
   function applySauceResult(top) {
