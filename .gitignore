@@ -1,3 +1,8 @@
 # Local-only documents (not for GitHub Pages)
 docs/
 .cursor/
+
+# Local backups (npm run backup:images).
+# Keep storage-backup/backup_instructions.md tracked.
+storage-backup/sightings-*.json
+storage-backup/sightings-images-*/
