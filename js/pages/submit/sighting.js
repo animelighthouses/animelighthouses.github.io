@@ -9,6 +9,7 @@
  * - trace.moe lookup (./traceMoe.js + ./lookupUi.js)
  * - SauceNAO lookup (./sauceNao.js + ./lookupUi.js)
  * - Image upload pipeline (../../imageProcessing.js) + insert into Supabase
+ * - Filename hints (./filenameHints.js): episode + timestamp from upload name
  *
  * On both lookups, episode + timestamp ALWAYS overwrite once the user clicks
  * Insert; AniList side fields only fill when currently empty/blank.
@@ -33,6 +34,7 @@ import {
   handleSubmitAuthButtonClick,
   setFormEnabledFromSession
 } from "../submitAuth.js";
+import { parseFilenameHints } from "./filenameHints.js";
 import { createLookupUi } from "./lookupUi.js";
 import {
   formatEpisode,
@@ -531,6 +533,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     setPreviewFromFile(file);
+
+    const { timestamp, episode } = parseFilenameHints(file.name);
+    if (timestamp) {
+      const tsEl = form?.querySelector('[name="timestamp"]');
+      if (tsEl) tsEl.value = timestamp;
+    }
+    if (episode) {
+      const epEl = form?.querySelector('[name="episode"]');
+      if (epEl) epEl.value = episode;
+    }
+
     if (imageSourceMode === "upload" && traceBtn) traceBtn.disabled = false;
     updateSauceEnabled();
   });

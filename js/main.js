@@ -11,12 +11,16 @@ import { initViewNav } from "./nav.js";
 import {
   bindAppearanceMode,
   bindCommonControls,
+  bindFilterPanelFooter,
   bindFilterPanelToggle,
   buildSightingCard,
   closeLightboxIfOpen,
   filterAndSortSightings,
   populateLighthouseFilter,
-  scrollWindowToElementTop
+  RECENT_FILTER_DEFAULTS,
+  scrollWindowToElementTop,
+  updateFilterResetDisabled,
+  updateFilterResultCount
 } from "./browse/index.js";
 
 const app = document.getElementById("app");
@@ -32,14 +36,9 @@ const preloadImageByUrl = new Map();
 
 /** @type {import("./browse/filters.js").BrowseState} */
 const state = {
-  searchTerm: "",
+  ...RECENT_FILTER_DEFAULTS,
   titleMode: readStoredTitleMode("title_r"),
-  navPosition: readStoredNavPosition("bottom"),
-  showAnime: true,
-  showManga: true,
-  realOnly: false,
-  sortMode: "newest",
-  lighthouseId: null
+  navPosition: readStoredNavPosition("bottom")
 };
 
 function preloadPageHeroImages(processed, pageIndex) {
@@ -93,6 +92,9 @@ function renderPage() {
 
   // Preload the next page's hero URLs via Image(); current page uses lazy <img> in the slot.
   preloadPageHeroImages(processed, currentPage + 1);
+
+  updateFilterResultCount(processed.length);
+  updateFilterResetDisabled(state, RECENT_FILTER_DEFAULTS);
 }
 
 function scrollAfterPageChange(scrollAfter) {
@@ -173,10 +175,14 @@ async function init() {
   populateLighthouseFilter(allData, state);
   bindFilterPanelToggle();
   bindAppearanceMode();
-  bindCommonControls(state, () => {
+
+  const onBrowseStateChange = () => {
     currentPage = 0;
     renderPage();
-  });
+  };
+
+  bindCommonControls(state, onBrowseStateChange);
+  bindFilterPanelFooter(state, RECENT_FILTER_DEFAULTS, onBrowseStateChange);
   renderPage();
 }
 

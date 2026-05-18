@@ -77,6 +77,79 @@ export function bindAppearanceMode() {
   return () => btn.removeEventListener("click", onClick);
 }
 
+function filterStateMatchesDefaults(state, defaults) {
+  return (
+    state.searchTerm === defaults.searchTerm &&
+    state.showAnime === defaults.showAnime &&
+    state.showManga === defaults.showManga &&
+    state.realOnly === defaults.realOnly &&
+    state.sortMode === defaults.sortMode &&
+    state.lighthouseId === defaults.lighthouseId
+  );
+}
+
+/** Push filter-panel fields from `state` into the DOM (not title/nav). */
+export function syncFilterControlsFromState(state) {
+  const search = document.getElementById("search");
+  if (search) search.value = state.searchTerm;
+
+  const sortMode = document.getElementById("sort-mode");
+  if (sortMode) sortMode.value = state.sortMode;
+
+  const realOnly = document.getElementById("real-only");
+  if (realOnly) realOnly.checked = state.realOnly;
+
+  const filterAnime = document.getElementById("filter-anime");
+  if (filterAnime) filterAnime.checked = state.showAnime;
+
+  const filterManga = document.getElementById("filter-manga");
+  if (filterManga) filterManga.checked = state.showManga;
+
+  const lighthouseFilter = document.getElementById("lighthouse-filter");
+  if (lighthouseFilter) {
+    lighthouseFilter.value =
+      state.lighthouseId != null ? String(state.lighthouseId) : "";
+  }
+}
+
+/** Update the filter-panel result count label. */
+export function updateFilterResultCount(count) {
+  const el = document.getElementById("filter-result-count");
+  if (!el) return;
+  el.textContent = count === 1 ? "1 result" : `${count} results`;
+}
+
+/** Enable/disable Reset when filter state already matches `defaults`. */
+export function updateFilterResetDisabled(state, defaults) {
+  const resetBtn = document.getElementById("filter-reset");
+  if (!resetBtn || !defaults) return;
+  resetBtn.disabled = filterStateMatchesDefaults(state, defaults);
+}
+
+/**
+ * Bind filter-panel Reset; restores `defaults` on filter fields only.
+ *
+ * @param {import("./filters.js").BrowseState} state
+ * @param {typeof import("./filters.js").RECENT_FILTER_DEFAULTS} defaults
+ * @param {() => void} onStateChange
+ */
+export function bindFilterPanelFooter(state, defaults, onStateChange) {
+  const resetBtn = document.getElementById("filter-reset");
+  if (!resetBtn) return () => {};
+
+  updateFilterResetDisabled(state, defaults);
+
+  const onReset = () => {
+    Object.assign(state, defaults);
+    syncFilterControlsFromState(state);
+    updateFilterResetDisabled(state, defaults);
+    onStateChange?.();
+  };
+
+  resetBtn.addEventListener("click", onReset);
+  return () => resetBtn.removeEventListener("click", onReset);
+}
+
 /**
  * Bind every shared filter control on browse pages. Each control mutates
  * `state` in place and then invokes `onStateChange()` so the host page can
@@ -87,6 +160,8 @@ export function bindAppearanceMode() {
  */
 export function bindCommonControls(state, onStateChange) {
   const cleanups = [];
+
+  syncFilterControlsFromState(state);
 
   const search = document.getElementById("search");
   if (search) {
@@ -127,7 +202,6 @@ export function bindCommonControls(state, onStateChange) {
 
   const sortMode = document.getElementById("sort-mode");
   if (sortMode) {
-    sortMode.value = state.sortMode;
     const onChange = e => {
       state.sortMode = e.target.value;
       onStateChange?.();
@@ -138,7 +212,6 @@ export function bindCommonControls(state, onStateChange) {
 
   const realOnly = document.getElementById("real-only");
   if (realOnly) {
-    realOnly.checked = state.realOnly;
     const onChange = e => {
       state.realOnly = e.target.checked;
       onStateChange?.();
@@ -149,7 +222,6 @@ export function bindCommonControls(state, onStateChange) {
 
   const filterAnime = document.getElementById("filter-anime");
   if (filterAnime) {
-    filterAnime.checked = state.showAnime;
     const onChange = e => {
       state.showAnime = e.target.checked;
       onStateChange?.();
@@ -160,7 +232,6 @@ export function bindCommonControls(state, onStateChange) {
 
   const filterManga = document.getElementById("filter-manga");
   if (filterManga) {
-    filterManga.checked = state.showManga;
     const onChange = e => {
       state.showManga = e.target.checked;
       onStateChange?.();
@@ -171,8 +242,6 @@ export function bindCommonControls(state, onStateChange) {
 
   const lighthouseFilter = document.getElementById("lighthouse-filter");
   if (lighthouseFilter) {
-    lighthouseFilter.value =
-      state.lighthouseId != null ? String(state.lighthouseId) : "";
     const onChange = e => {
       const v = e.target.value;
       state.lighthouseId = v === "" ? null : Number(v);

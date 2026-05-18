@@ -19,6 +19,22 @@
  * @property {number | null} lighthouseId
  */
 
+/** Default filter-panel fields for Recent (index.html). */
+export const RECENT_FILTER_DEFAULTS = {
+  searchTerm: "",
+  showAnime: true,
+  showManga: true,
+  realOnly: false,
+  sortMode: "newest",
+  lighthouseId: null
+};
+
+/** Default filter-panel fields for Index (index-view.html). */
+export const INDEX_FILTER_DEFAULTS = {
+  ...RECENT_FILTER_DEFAULTS,
+  sortMode: "az"
+};
+
 /**
  * Match a row against the user's search term.
  *

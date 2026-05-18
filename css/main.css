@@ -136,9 +136,6 @@ button {
 
 button:hover:not(:disabled) {
   background: var(--surface-hover);
-}
-
-button:hover {
   color: var(--accent);
 }
 
@@ -437,7 +434,8 @@ h2 {
   font-size: 1rem;
 }
 
-.pagination button {
+.pagination button,
+.filter-reset {
   padding: var(--space-4) var(--space-6);
   min-height: 2.25rem;
   font-size: 0.95rem;
@@ -445,11 +443,13 @@ h2 {
   color: var(--text-muted);
 }
 
-.pagination button:hover {
+.pagination button:hover:not(:disabled),
+.filter-reset:hover:not(:disabled) {
   color: var(--accent);
 }
 
-.pagination button:disabled {
+.pagination button:disabled,
+.filter-reset:disabled {
   opacity: 0.45;
   cursor: default;
 }
@@ -539,6 +539,19 @@ button.burger:hover:not(:disabled) {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--surface);
+}
+
+.filter-panel-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+}
+
+.filter-result-count {
+  font-size: 0.85rem;
+  color: var(--text-muted);
 }
 
 /* hidden state */

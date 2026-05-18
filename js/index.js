@@ -12,13 +12,17 @@ import { initViewNav } from "./nav.js";
 import {
   bindAppearanceMode,
   bindCommonControls,
+  bindFilterPanelFooter,
   bindFilterPanelToggle,
   buildSightingCard,
   closeLightboxIfOpen,
   filterAndSortSightings,
+  INDEX_FILTER_DEFAULTS,
   populateLighthouseFilter,
   scrollWindowToElementTop,
-  trimmedDisplay
+  trimmedDisplay,
+  updateFilterResetDisabled,
+  updateFilterResultCount
 } from "./browse/index.js";
 
 const app = document.getElementById("app");
@@ -28,13 +32,8 @@ let allData = [];
 
 /** @type {import("./browse/filters.js").BrowseState} */
 const state = {
-  searchTerm: "",
-  titleMode: readStoredTitleMode("title_r"),
-  showAnime: true,
-  showManga: true,
-  realOnly: false,
-  sortMode: "az",
-  lighthouseId: null
+  ...INDEX_FILTER_DEFAULTS,
+  titleMode: readStoredTitleMode("title_r")
 };
 
 /** Expanded row ids (stable key: sighting id, else date_spotted string) */
@@ -127,6 +126,9 @@ function renderIndexView() {
   app.appendChild(collapseWrapper);
 
   syncCollapseAllDisabled();
+
+  updateFilterResultCount(processed.length);
+  updateFilterResetDisabled(state, INDEX_FILTER_DEFAULTS);
 }
 
 async function init() {
@@ -136,11 +138,14 @@ async function init() {
 
   bindFilterPanelToggle();
   bindAppearanceMode();
-  bindCommonControls(state, () => {
+
+  const onBrowseStateChange = () => {
     expanded.clear();
     renderIndexView();
-  });
+  };
 
+  bindCommonControls(state, onBrowseStateChange);
+  bindFilterPanelFooter(state, INDEX_FILTER_DEFAULTS, onBrowseStateChange);
   renderIndexView();
 }
 
