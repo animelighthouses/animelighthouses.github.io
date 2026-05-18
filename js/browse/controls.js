@@ -77,6 +77,28 @@ export function bindAppearanceMode() {
   return () => btn.removeEventListener("click", onClick);
 }
 
+/**
+ * Bind footer title-mode select only (e.g. sighting share page).
+ *
+ * @param {{ getTitleMode: () => string, onTitleModeChange: (mode: string) => void }} options
+ * @returns {() => void} cleanup
+ */
+export function bindTitleMode({ getTitleMode, onTitleModeChange }) {
+  const titleMode = document.getElementById("title-mode");
+  if (!titleMode) return () => {};
+
+  titleMode.value = getTitleMode();
+
+  const onChange = e => {
+    const next = e.target.value;
+    persistTitleMode(next);
+    onTitleModeChange?.(next);
+  };
+
+  titleMode.addEventListener("change", onChange);
+  return () => titleMode.removeEventListener("change", onChange);
+}
+
 function filterStateMatchesDefaults(state, defaults) {
   return (
     state.searchTerm === defaults.searchTerm &&

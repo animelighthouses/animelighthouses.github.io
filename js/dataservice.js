@@ -106,3 +106,27 @@ export async function fetchSightings() {
   writeSightingsCache(rows);
   return rows;
 }
+
+/**
+ * Fetch one sighting by primary key (shared sighting page).
+ *
+ * @param {number} id
+ * @returns {Promise<SightingRow|null>}
+ */
+export async function fetchSightingById(id) {
+  const { data, error } = await supabaseClient
+    .from("sightings")
+    .select(`
+      *,
+      lighthouses (*)
+    `)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error fetching sighting:", error);
+    return null;
+  }
+
+  return data;
+}

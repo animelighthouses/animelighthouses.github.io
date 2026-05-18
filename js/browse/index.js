@@ -16,9 +16,11 @@ export {
   bindCommonControls,
   bindFilterPanelFooter,
   bindFilterPanelToggle,
+  bindTitleMode,
   scrollWindowToElementBottom,
   scrollWindowToElementTop,
   syncFilterControlsFromState,
   updateFilterResetDisabled,
   updateFilterResultCount
 } from "./controls.js";
+export { sightingSharePath } from "./sightingLink.js";

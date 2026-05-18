@@ -15,8 +15,9 @@ export function initViewNav() {
 
   const path = (window.location.pathname || "").toLowerCase();
   const isIndexView = path.includes("index-view");
+  const isSharedSightingPage = path.includes("sighting");
 
-  viewRecent.classList.toggle("active", !isIndexView);
+  viewRecent.classList.toggle("active", !isIndexView && !isSharedSightingPage);
   viewIndex.classList.toggle("active", isIndexView);
 }
 

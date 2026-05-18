@@ -19,6 +19,35 @@ import {
   syncLightboxImageSrc,
   syncLightboxNavVisibility
 } from "./lightbox.js";
+import { sightingSharePath } from "./sightingLink.js";
+
+const SVG_VIEW_BOX = "0 -960 960 960";
+
+const MULTI_IMAGE_ICON_PATH =
+  "M360-400h400L622-580l-92 120-62-80-108 140Zm-40 160q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-480H320v480ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Zm160-720v480-480Z";
+
+const DIRECT_LINK_ICON_PATH =
+  "M318-120q-82 0-140-58t-58-140q0-40 15-76t43-64l134-133 56 56-134 134q-17 17-25.5 38.5T200-318q0 49 34.5 83.5T318-200q23 0 45-8.5t39-25.5l133-134 57 57-134 133q-28 28-64 43t-76 15Zm79-220-57-57 223-223 57 57-223 223Zm251-28-56-57 134-133q17-17 25-38t8-44q0-50-34-85t-84-35q-23 0-44.5 8.5T558-726L425-592l-57-56 134-134q28-28 64-43t76-15q82 0 139.5 58T839-641q0 39-14.5 75T782-502L648-368Z";
+
+/** @param {string} pathD @param {string} svgClass */
+function createCardMaterialIcon(pathD, svgClass) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", SVG_VIEW_BOX);
+  svg.setAttribute("class", svgClass);
+  svg.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", pathD);
+  path.setAttribute("fill", "currentColor");
+  svg.appendChild(path);
+  return svg;
+}
+
+function isPositiveSightingId(id) {
+  const raw = String(id).trim();
+  if (!/^\d+$/.test(raw)) return false;
+  const n = Number.parseInt(raw, 10);
+  return n > 0;
+}
 
 export function createLink(text, url, iconSrc) {
   const a = document.createElement("a");
@@ -159,10 +188,28 @@ export function buildSightingCard(entry, { titleMode, recentImageSlot = false } 
     card.classList.add("card--recent");
   }
 
-  // DATE
+  // DATE + direct link
+  const headerRow = document.createElement("div");
+  headerRow.className = "card-header-row";
+
   const date = document.createElement("div");
+  date.className = "card-date";
   date.textContent = formatSpottedDate(entry.date_spotted);
-  card.appendChild(date);
+  headerRow.appendChild(date);
+
+  if (entry.id != null && isPositiveSightingId(entry.id)) {
+    const directLink = document.createElement("a");
+    directLink.href = sightingSharePath(entry.id);
+    directLink.className = "card-direct-link";
+    directLink.title = "Direct link";
+    directLink.setAttribute("aria-label", "Direct link");
+    directLink.appendChild(
+      createCardMaterialIcon(DIRECT_LINK_ICON_PATH, "card-direct-link-svg")
+    );
+    headerRow.appendChild(directLink);
+  }
+
+  card.appendChild(headerRow);
 
   // IMAGE
   if (entry.image_link?.length) {
@@ -185,18 +232,9 @@ export function buildSightingCard(entry, { titleMode, recentImageSlot = false } 
     multi.className = "card-multi-image-indicator";
     multi.setAttribute("aria-label", `${nImages} images`);
     multi.title = `${nImages} images`;
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("viewBox", "0 -960 960 960");
-    svg.setAttribute("class", "card-multi-image-indicator-svg");
-    svg.setAttribute("aria-hidden", "true");
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute(
-      "d",
-      "M360-400h400L622-580l-92 120-62-80-108 140Zm-40 160q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-480H320v480ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Zm160-720v480-480Z"
+    multi.appendChild(
+      createCardMaterialIcon(MULTI_IMAGE_ICON_PATH, "card-multi-image-indicator-svg")
     );
-    path.setAttribute("fill", "currentColor");
-    svg.appendChild(path);
-    multi.appendChild(svg);
     name.appendChild(multi);
   }
   card.appendChild(name);

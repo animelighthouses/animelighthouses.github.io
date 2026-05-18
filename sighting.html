@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<!-- Shared sighting view. Entry: /js/pages/view-sighting.js. Styles: /css/main.css.
+     Query: ?id=<numeric sightings.id>. Invalid/missing/not-found redirects to /. -->
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anime Lighthouse Index | Sighting</title>
+  <script src="/js/theme-boot.js"></script>
+  <link rel="stylesheet" href="/css/main.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+  <div class="container">
+
+    <header>
+      <h1>Anime Lighthouse Index</h1>
+
+      <!-- include: partials/browse-subtitle-no-burger.html -->
+      <div class="subtitle-bar">
+        <div class="subtitle">
+          <span id="view-recent" class="view-link"><a class="view-anchor" href="/">Recent</a></span>
+          •
+          <span id="view-index" class="view-link"><a class="view-anchor" href="/index-view">Index</a></span>
+        </div>
+      </div>
+      <!-- /include -->
+    </header>
+
+    <main id="app"></main>
+
+  </div>
+
+  <footer class="site-footer" aria-label="Site preferences">
+    <div class="container site-footer-inner">
+      <div class="site-footer-controls">
+        <!-- include: partials/footer-theme-row.html -->
+        <div class="site-footer-theme-row">
+          <span class="site-footer-label" id="light-theme-label">Light theme</span>
+          <button
+            type="button"
+            id="theme-light-toggle"
+            class="theme-switch-btn"
+            role="switch"
+            aria-checked="false"
+            aria-labelledby="light-theme-label">
+            <span class="theme-switch-track" aria-hidden="true">
+              <span class="theme-switch-thumb"></span>
+            </span>
+          </button>
+        </div>
+        <!-- /include -->
+        <label class="site-footer-title-lang">
+          <span class="site-footer-label">Titles</span>
+          <select id="title-mode" class="site-footer-select">
+            <option value="title_en">English</option>
+            <option value="title_r">Romaji</option>
+            <option value="title_jp">日本語</option>
+          </select>
+        </label>
+      </div>
+      <!-- include: partials/footer-links.html -->
+      <div class="site-footer-links-wrap">
+        <nav class="site-footer-links" aria-label="Site links">
+          <a href="/">Home</a>
+          <a href="/about">About</a>
+        </nav>
+      </div>
+      <!-- /include -->
+    </div>
+  </footer>
+
+  <script type="module" src="/js/pages/view-sighting.js"></script>
+</body>
+
+</html>
