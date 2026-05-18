@@ -1,7 +1,7 @@
 /**
  * Client-side filter, sort, and lighthouse-dropdown logic for browse views.
  *
- * The Recent and Index views fetch all sightings once (via dataservice.js +
+ * The Recent and List views fetch all sightings once (via dataservice.js +
  * sessionStorage cache) and then run this pipeline in memory on every state
  * change. The dataset is small enough (~hundreds of rows) that this is
  * cheaper than refetching.
@@ -29,7 +29,7 @@ export const RECENT_FILTER_DEFAULTS = {
   lighthouseId: null
 };
 
-/** Default filter-panel fields for Index (index-view.html). */
+/** Default filter-panel fields for List (list.html). */
 export const INDEX_FILTER_DEFAULTS = {
   ...RECENT_FILTER_DEFAULTS,
   sortMode: "az"

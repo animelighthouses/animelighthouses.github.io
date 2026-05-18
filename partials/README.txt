@@ -34,7 +34,7 @@ Troubleshooting:
   after `include` directives and stripping `\r\n` on read.
 
 Inventory:
-  browse-subtitle.html            — Recent / Index nav row + burger
+  browse-subtitle.html            — Recent / List nav row + burger
   browse-subtitle-no-burger.html  — same row without the burger (about page)
   browse-filter-panel.html        — search + filters + sort dropdown panel
   footer-theme-row.html           — light theme switch row

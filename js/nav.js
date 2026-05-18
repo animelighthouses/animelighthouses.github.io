@@ -3,7 +3,7 @@
  * No client-side router: uses `window.location.pathname`.
  *
  * Exports:
- * - initViewNav — Recent vs Index (paths `/` and `/index-view`)
+ * - initViewNav — Recent vs List (paths `/` and `/list`)
  * - initSubmitNav — Sighting vs Lighthouse (`/submit` vs `/submitl`)
  */
 
@@ -14,11 +14,11 @@ export function initViewNav() {
   if (!viewRecent || !viewIndex) return;
 
   const path = (window.location.pathname || "").toLowerCase();
-  const isIndexView = path.includes("index-view");
+  const isListView = path.includes("/list");
   const isSharedSightingPage = path.includes("sighting");
 
-  viewRecent.classList.toggle("active", !isIndexView && !isSharedSightingPage);
-  viewIndex.classList.toggle("active", isIndexView);
+  viewRecent.classList.toggle("active", !isListView && !isSharedSightingPage);
+  viewIndex.classList.toggle("active", isListView);
 }
 
 export function initSubmitNav() {

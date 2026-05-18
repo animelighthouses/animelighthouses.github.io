@@ -2,7 +2,7 @@
  * Recent sightings view for index.html: paginated cards and shared filter panel.
  *
  * Fetches all sightings once (with cache in dataservice), filters/sorts client-side
- * via js/browse/, and marks the Recent/Index tab via nav.js.
+ * via js/browse/, and marks the Recent/List tab via nav.js.
  */
 
 import { fetchSightings } from "./dataservice.js";

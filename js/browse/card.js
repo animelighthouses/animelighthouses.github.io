@@ -1,6 +1,6 @@
 /**
- * Sighting card builder shared by the Recent (index.html) and Index
- * (index-view.html) views.
+ * Sighting card builder shared by the Recent (index.html) and List
+ * (list.html) views.
  *
  * Exports:
  * - createLink — anchor with optional favicon (used in card body + lighthouse block)

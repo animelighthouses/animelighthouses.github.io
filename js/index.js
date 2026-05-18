@@ -1,5 +1,5 @@
 /**
- * Compact index view for index-view.html: one row per sighting, expand for full card.
+ * Compact list view for list.html: one row per sighting, expand for full card.
  *
  * Reuses buildSightingCard from js/browse/card.js (same card as Recent). Collapsed
  * rows defer creating card DOM and images until first expand to avoid loading every
