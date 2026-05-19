@@ -277,7 +277,7 @@ h2 {
 
 /* -------------------------
    Multi-image nav (card + lightbox)
-   - Wrap is sized to the image so 10% columns align with the image, not the card.
+   - Circular prev/next on the image edges (card) or viewport sides (lightbox).
    - Buttons are always rendered; toggled with the [hidden] attribute when at
      first/last bound or on single-image cards.
 --------------------------*/
@@ -331,23 +331,28 @@ h2 {
 .lightbox-nav {
   position: absolute;
   z-index: 1;
-  top: 0;
-  bottom: 0;
-  width: 10%;
-  min-width: 44px;
-  background: transparent;
+  top: 50%;
+  bottom: auto;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.35);
   border: 0;
   padding: 0;
   display: grid;
   place-items: center;
+  transform: translateY(-50%);
   color: white;
-  font-size: 2rem;
-  font-weight: 300;
-  line-height: 1;
   opacity: 0.55;
   cursor: pointer;
-  text-shadow: 0 0 6px rgba(0, 0, 0, 0.55);
   transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.image-nav-icon {
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.55));
 }
 
 .card-image-nav:hover:not(:disabled),
@@ -355,7 +360,7 @@ h2 {
 .lightbox-nav:hover:not(:disabled),
 .lightbox-nav:focus-visible {
   opacity: 1;
-  background: rgba(0, 0, 0, 0.18);
+  background: rgba(0, 0, 0, 0.55);
   color: white;
 }
 
@@ -366,12 +371,12 @@ h2 {
 
 .card-image-prev,
 .lightbox-prev {
-  left: 0;
+  left: var(--space-4);
 }
 
 .card-image-next,
 .lightbox-next {
-  right: 0;
+  right: var(--space-4);
 }
 
 
@@ -469,6 +474,18 @@ h2 {
   color: var(--text-muted);
 }
 
+.pagination button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination .image-nav-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  filter: none;
+}
+
 .pagination button:hover:not(:disabled),
 .filter-reset:hover:not(:disabled) {
   color: var(--accent);
@@ -535,21 +552,31 @@ h2 {
 }
 
 /* NEW SECTION FOR CONTROL PANEL */
-/* subtitle row */
+/* subtitle row — fixed row height so burger / no-burger pages align */
 .subtitle-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  --subtitle-bar-action-height: calc(1.4rem + 0.2rem);
+  min-height: var(--subtitle-bar-action-height);
 }
 
 /* burger button */
 .burger {
   font-size: 1.4rem;
+  line-height: 1;
+  box-sizing: border-box;
+  height: var(--subtitle-bar-action-height);
+  min-height: var(--subtitle-bar-action-height);
+  padding: 0 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   background-color: var(--surface);
   border: none;
   cursor: pointer;
   color: var(--text);
-  padding: 0.1rem 0.4rem;
 }
 
 button.burger:hover:not(:disabled) {
@@ -667,6 +694,10 @@ button.burger:hover:not(:disabled) {
 .index-title {
   cursor: pointer;
   font-weight: 500;
+}
+
+.index-title-media {
+  font-weight: 700;
 }
 
 .index-title:hover {

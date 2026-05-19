@@ -59,8 +59,8 @@ security boundary is server policy, not UI state.
   glyph, inline SVG with currentColor matching --text-muted). Tooltip and aria-label on the wrapper
   still include the image count; collapsed List rows do not show the icon (only the expanded card
   from buildSightingCard).
-- Multi-image: card and lightbox share index; ~10% width edge tap zones and ArrowLeft/ArrowRight;
-  zones hide at ends; lightbox closes on backdrop/image click or Escape.
+- Multi-image: card and lightbox share index; circular on-screen prev/next buttons and
+  ArrowLeft/ArrowRight; buttons hide at ends; lightbox closes on backdrop/image click or Escape.
 - Re-renders from filter/sort/search/page change close an open lightbox first.
 - Pagination: 10 per page; first/prev/next/last + range label; filter changes reset to page 0;
   scroll anchors to main content once after page moves.
@@ -77,8 +77,8 @@ security boundary is server policy, not UI state.
 
 4. Browse — List (list.html)
 
-- Compact rows: one line shows active title mode (fallback title_en), optional “ — <episode>”
-  when episode is non-empty after trim (disambiguates duplicate titles), then optional
+- Compact rows: one line shows active title mode (fallback title_en) in bold, optional space +
+  <episode> when episode is non-empty after trim (disambiguates duplicate titles), then optional
   “ (lighthouse name en)” for real sightings; expand toggles the full card as on Recent.
 - First expand builds and caches card DOM per row.
 - Toolbar: Collapse All (disabled when nothing expanded), live filtered count.

@@ -1,3 +1,5 @@
+import { createImageNavIcon } from "./imageNavIcon.js";
+
 /**
  * Singleton image lightbox shared by every sighting card.
  *
@@ -55,13 +57,13 @@ function ensureLightbox() {
   lightboxPrevBtn.type = "button";
   lightboxPrevBtn.className = "lightbox-nav lightbox-prev";
   lightboxPrevBtn.setAttribute("aria-label", "Previous image");
-  lightboxPrevBtn.textContent = "‹";
+  lightboxPrevBtn.appendChild(createImageNavIcon("prev"));
 
   lightboxNextBtn = document.createElement("button");
   lightboxNextBtn.type = "button";
   lightboxNextBtn.className = "lightbox-nav lightbox-next";
   lightboxNextBtn.setAttribute("aria-label", "Next image");
-  lightboxNextBtn.textContent = "›";
+  lightboxNextBtn.appendChild(createImageNavIcon("next"));
 
   // Backdrop and image close the lightbox; nav buttons stop propagation
   // and route navigation through the active controller.

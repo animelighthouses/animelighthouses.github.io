@@ -64,7 +64,6 @@ function renderIndexView() {
 
     const titleText = entry[state.titleMode] || entry.title_en;
     const ep = trimmedDisplay(entry.episode);
-    const episodeSuffix = ep ? ` — ${ep}` : "";
     const lighthouse =
       entry.lighthouse_type === "real" && entry.lighthouses
         ? ` (${entry.lighthouses.name_en})`
@@ -72,7 +71,12 @@ function renderIndexView() {
 
     const title = document.createElement("div");
     title.className = "index-title";
-    title.textContent = titleText + episodeSuffix + lighthouse;
+    const titleStrong = document.createElement("strong");
+    titleStrong.className = "index-title-media";
+    titleStrong.textContent = titleText;
+    title.appendChild(titleStrong);
+    if (ep) title.appendChild(document.createTextNode(` ${ep}`));
+    if (lighthouse) title.appendChild(document.createTextNode(lighthouse));
 
     const details = document.createElement("div");
     details.className = "index-details";

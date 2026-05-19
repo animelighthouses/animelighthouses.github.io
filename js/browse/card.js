@@ -19,6 +19,7 @@ import {
   syncLightboxImageSrc,
   syncLightboxNavVisibility
 } from "./lightbox.js";
+import { createImageNavIcon } from "./imageNavIcon.js";
 import { sightingSharePath } from "./sightingLink.js";
 
 const SVG_VIEW_BOX = "0 -960 960 960";
@@ -108,25 +109,24 @@ function buildCardImageBlock(entry) {
   prevBtn.type = "button";
   prevBtn.className = "card-image-nav card-image-prev";
   prevBtn.setAttribute("aria-label", "Previous image");
-  prevBtn.textContent = "‹";
+  prevBtn.appendChild(createImageNavIcon("prev"));
 
   const nextBtn = document.createElement("button");
   nextBtn.type = "button";
   nextBtn.className = "card-image-nav card-image-next";
   nextBtn.setAttribute("aria-label", "Next image");
-  nextBtn.textContent = "›";
+  nextBtn.appendChild(createImageNavIcon("next"));
 
   const isMulti = urls.length > 1;
   setNavBtnHidden(prevBtn, !isMulti || index <= 0);
   setNavBtnHidden(nextBtn, !isMulti || index >= urls.length - 1);
 
-  function preloadNeighbors(i) {
-    for (const n of [i - 1, i + 1]) {
-      if (n >= 0 && n < urls.length) {
-        const im = new Image();
-        im.decoding = "async";
-        im.src = urls[n];
-      }
+  function preloadNext(i) {
+    const n = i + 1;
+    if (n < urls.length) {
+      const im = new Image();
+      im.decoding = "async";
+      im.src = urls[n];
     }
   }
 
@@ -152,7 +152,7 @@ function buildCardImageBlock(entry) {
       syncLightboxImageSrc(controller, urls[index]);
     }
     syncNavVisibility();
-    preloadNeighbors(index);
+    preloadNext(index);
   }
 
   const controller = {
@@ -177,6 +177,8 @@ function buildCardImageBlock(entry) {
   wrap.appendChild(cardImg);
   wrap.appendChild(prevBtn);
   wrap.appendChild(nextBtn);
+
+  if (isMulti) preloadNext(0);
 
   return { wrap, controller };
 }

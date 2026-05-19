@@ -22,6 +22,7 @@ import {
   updateFilterResetDisabled,
   updateFilterResultCount
 } from "./browse/index.js";
+import { createImageNavIcon } from "./browse/imageNavIcon.js";
 
 const app = document.getElementById("app");
 
@@ -122,7 +123,9 @@ function createPagination(totalItems, { scrollAfter = "top" } = {}) {
   wrapper.className = "pagination";
 
   const first = document.createElement("button");
-  first.textContent = "<<";
+  first.type = "button";
+  first.setAttribute("aria-label", "First page");
+  first.appendChild(createImageNavIcon("first"));
   first.disabled = currentPage === 0;
   first.onclick = () => {
     currentPage = 0;
@@ -132,7 +135,9 @@ function createPagination(totalItems, { scrollAfter = "top" } = {}) {
   wrapper.appendChild(first);
 
   const prev = document.createElement("button");
-  prev.textContent = "<";
+  prev.type = "button";
+  prev.setAttribute("aria-label", "Previous page");
+  prev.appendChild(createImageNavIcon("prev"));
   prev.disabled = currentPage === 0;
   prev.onclick = () => {
     currentPage--;
@@ -147,7 +152,9 @@ function createPagination(totalItems, { scrollAfter = "top" } = {}) {
   wrapper.appendChild(label);
 
   const next = document.createElement("button");
-  next.textContent = ">";
+  next.type = "button";
+  next.setAttribute("aria-label", "Next page");
+  next.appendChild(createImageNavIcon("next"));
   next.disabled = currentPage >= totalPages - 1;
   next.onclick = () => {
     currentPage++;
@@ -157,7 +164,9 @@ function createPagination(totalItems, { scrollAfter = "top" } = {}) {
   wrapper.appendChild(next);
 
   const last = document.createElement("button");
-  last.textContent = ">>";
+  last.type = "button";
+  last.setAttribute("aria-label", "Last page");
+  last.appendChild(createImageNavIcon("last"));
   last.disabled = currentPage >= totalPages - 1;
   last.onclick = () => {
     currentPage = totalPages - 1;

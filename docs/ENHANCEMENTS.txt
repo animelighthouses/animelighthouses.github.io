@@ -68,11 +68,6 @@ clears the `expanded` set first.
 Changing preferences on index.html also reset pagination (returns to page 0). This should not happen, so avoid resetting page position when toggling unrelated preferences on index.html.
 
 
-10. Carousel: preload adjacent image
-
-Preload currentIndex+1 in lightbox/card carousel for smoother advance.
-
-
 11. Schema split exploration (separate tables for anime vs manga sightings)
 
 Separate tables to drop media_type ambiguity and optionally use chapter vs episode fields;
