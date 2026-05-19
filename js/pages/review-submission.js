@@ -49,7 +49,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("submissionSelect")
   );
   const reviewFormBody = document.getElementById("reviewFormBody");
-  const reviewAdvancedFields = document.getElementById("reviewAdvancedFields");
   const approveBtn = /** @type {HTMLButtonElement | null} */ (document.getElementById("approveBtn"));
   const rejectBtn = document.getElementById("rejectBtn");
 
@@ -125,10 +124,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateTypeUI();
     if (isReal.checked) await loadLighthousesOnce();
   });
-
-  function setModeVisibility(isAdvanced) {
-    if (reviewAdvancedFields) reviewAdvancedFields.toggleAttribute("hidden", !isAdvanced);
-  }
 
   function revokePreviewObjectUrl() {
     if (previewObjectUrl) {
@@ -397,8 +392,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function prefillFromSubmission(row) {
     if (!form || !row) return;
-    const isAdvanced = row.form_mode === "advanced";
-    setModeVisibility(isAdvanced);
 
     const url = String(row.image_url ?? "").trim();
     if (submitterUsername) {
@@ -426,41 +419,49 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (anilistInput) anilistInput.value = row.anilist_link ?? "";
 
-    if (isAdvanced) {
-      const dateEl = form.querySelector('[name="date_spotted"]');
-      if (dateEl) dateEl.value = row.date_spotted ? normalizeYmd(row.date_spotted) : "";
-      const setVal = (name, val) => {
-        const el = form.querySelector(`[name="${name}"]`);
-        if (el) el.value = val ?? "";
-      };
-      setVal("title_en", row.title_en);
-      setVal("title_r", row.title_r);
-      setVal("title_jp", row.title_jp);
-      setVal("episode", row.episode);
-      setVal("timestamp", row.timestamp);
-      if (row.media_id) mediaCache.id = String(row.media_id);
-      if (row.media_type) mediaCache.type = row.media_type;
-      if (isReal) isReal.checked = row.lighthouse_type === "real";
-      updateTypeUI();
-      if (row.lighthouse_type === "real") {
-        await loadLighthousesOnce();
-        if (lighthouseSelect && row.lighthouse_id != null) {
-          lighthouseSelect.value = String(row.lighthouse_id);
-        }
-      }
+    const today = new Date().toISOString().slice(0, 10);
+    const dateEl = form.querySelector('[name="date_spotted"]');
+    if (dateEl) dateEl.value = row.date_spotted ? normalizeYmd(row.date_spotted) : today;
+
+    const setVal = (name, val) => {
+      const el = form.querySelector(`[name="${name}"]`);
+      if (el) el.value = val ?? "";
+    };
+    setVal("title_en", row.title_en);
+    setVal("title_r", row.title_r);
+    setVal("title_jp", row.title_jp);
+    setVal("episode", row.episode);
+    setVal("timestamp", row.timestamp);
+
+    if (row.media_id) {
+      mediaCache.id = String(row.media_id);
+      mediaCache.type = row.media_type ?? null;
     } else {
-      if (isReal) isReal.checked = false;
-      updateTypeUI();
-      mediaCache.id = null;
-      mediaCache.type = null;
+      const parsed = parseAniListUrl(String(row.anilist_link ?? ""));
+      if (parsed) {
+        mediaCache.id = parsed.id;
+        mediaCache.type = parsed.type;
+      } else {
+        mediaCache.id = null;
+        mediaCache.type = null;
+      }
     }
 
     applyEnrichmentTitles(row);
 
+    if (isReal) isReal.checked = row.lighthouse_type === "real";
+    updateTypeUI();
+    if (row.lighthouse_type === "real") {
+      await loadLighthousesOnce();
+      if (lighthouseSelect && row.lighthouse_id != null) {
+        lighthouseSelect.value = String(row.lighthouse_id);
+      }
+    }
+
     pendingUploadFile = null;
     if (imageFileInput) imageFileInput.value = "";
     setPreviewFromFile(null);
-    setImageSourceMode("upload");
+    setImageSourceMode(url ? "url" : "upload");
     updateApproveEnabled();
     resetTraceUi();
     resetSauceUi();
