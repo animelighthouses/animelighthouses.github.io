@@ -1,5 +1,5 @@
 /**
- * Shared GitHub OAuth and submit-form gating for submit.html / submitl.html.
+ * Shared GitHub OAuth and form gating for submit, admin, and edit pages.
  *
  * Uses Supabase Auth (signInWithOAuth, exchangeCodeForSession, getSession, signOut).
  * Forms stay disabled until a session exists; RLS on the database is still authoritative.
@@ -37,39 +37,44 @@ function setNoticeVisible(noticeEl, visible) {
   else noticeEl.setAttribute("hidden", "");
 }
 
+function applyLoginButtonState(loginBtn, hasSession) {
+  if (!loginBtn) return;
+  loginBtn.disabled = false;
+  loginBtn.textContent = hasSession ? "Log out" : "Login";
+  if (hasSession) {
+    loginBtn.style.background = "#4caf50";
+    loginBtn.style.color = "white";
+  } else {
+    loginBtn.style.background = "";
+    loginBtn.style.color = "";
+  }
+  loginBtn.style.pointerEvents = "auto";
+}
+
 export async function setFormEnabledFromSession({ form, loginBtn, noticeEl }) {
   await exchangeCodeForSession();
   const { data } = await supabaseClient.auth.getSession();
   const hasSession = Boolean(data?.session);
 
-  if (!form || !loginBtn) return hasSession;
+  if (!loginBtn) return hasSession;
 
-  if (hasSession) {
-    form.style.opacity = 1;
-    form.style.pointerEvents = "auto";
-    setFormControlsDisabled(form, false);
-
-    loginBtn.disabled = false;
-    loginBtn.textContent = "Log out";
-    loginBtn.style.background = "#4caf50";
-    loginBtn.style.color = "white";
-    loginBtn.style.pointerEvents = "auto";
-
-    setNoticeVisible(noticeEl, false);
+  if (form) {
+    if (hasSession) {
+      form.style.opacity = 1;
+      form.style.pointerEvents = "auto";
+      setFormControlsDisabled(form, false);
+      setNoticeVisible(noticeEl, false);
+    } else {
+      form.style.opacity = 0.5;
+      form.style.pointerEvents = "none";
+      setFormControlsDisabled(form, true);
+      setNoticeVisible(noticeEl, true);
+    }
   } else {
-    form.style.opacity = 0.5;
-    form.style.pointerEvents = "none";
-    setFormControlsDisabled(form, true);
-
-    loginBtn.disabled = false;
-    loginBtn.textContent = "Login";
-    loginBtn.style.background = "";
-    loginBtn.style.color = "";
-    loginBtn.style.pointerEvents = "auto";
-
-    setNoticeVisible(noticeEl, true);
+    setNoticeVisible(noticeEl, !hasSession);
   }
 
+  applyLoginButtonState(loginBtn, hasSession);
   return hasSession;
 }
 

@@ -1,29 +1,26 @@
 <!DOCTYPE html>
-<!-- Submit a sighting. Entry: /js/pages/submit/sighting.js -->
+<!-- Edit sighting metadata. Entry: /js/pages/edit-sighting.js -->
 <html lang="en">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Submit a sighting</title>
+    <title>Edit sighting</title>
     <script src="/js/theme-boot.js"></script>
     <link rel="stylesheet" href="/css/main.css" />
     <link rel="stylesheet" href="/css/submit.css" />
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pica@9.0.1/dist/pica.min.js"></script>
 </head>
 
 <body>
     <div class="container">
         <header>
-            <h1>Submit</h1>
-            <!-- include: partials/submit-subtitle.html -->
+            <h1>Edit sighting</h1>
+            <!-- include: partials/admin-subtitle.html -->
             <div class="subtitle-bar">
               <div class="subtitle">
-                <span id="view-sighting" class="view-link"><a class="view-anchor" href="/submit">Sighting</a></span>
-                •
-                <span id="view-lighthouse" class="view-link"><a class="view-anchor" href="/submitl">Lighthouse</a></span>
+                <span class="view-link"><a class="view-anchor" href="/admin">Admin</a></span>
                 |
                 <span class="view-link"><a class="view-anchor" href="/">Home</a></span>
               </div>
@@ -31,40 +28,27 @@
               <button id="loginBtn">Login</button>
             </div>
             <p id="submitAdminNotice" class="submit-auth-notice" hidden>
-              Only administrators may submit. Please sign in with an authorized account to continue.
+              Only administrators may use these tools. Please sign in with an authorized account to continue.
             </p>
             <!-- /include -->
-            <form id="lighthouseForm">
 
+            <form id="editForm">
                 <div class="section">
                     <div class="field">
-                        <label>Date spotted *</label>
-                        <input name="date_spotted" type="date" required />
+                        <label>Sighting row</label>
+                        <select name="sighting_id" id="sightingSelect" required>
+                            <option value="">Loading…</option>
+                        </select>
                     </div>
                 </div>
 
                 <div class="section">
                     <div class="field">
-                        <div class="label-row">
-                            <label>Image</label>
-                            <div class="label-toggle" role="group" aria-label="Image source">
-                                <button type="button" id="imageSourceUploadBtn" class="label-toggle-btn is-active">Upload</button>
-                                <button type="button" id="imageSourceUrlBtn" class="label-toggle-btn">URL</button>
-                            </div>
-                        </div>
-                        <img id="imagePreview" class="image-preview" alt="Selected image preview" hidden />
-                        <div id="imageUploadRow" class="image-input-row">
-                            <input
-                                name="image_file"
-                                id="imageFileInput"
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp"
-                            />
+                        <label>Stored image (first)</label>
+                        <p class="hint">To change images, use <a href="/submiti">Edit images</a>.</p>
+                        <img id="storedImagePreview" class="image-preview" alt="First stored sighting image" hidden />
+                        <div class="anilist-row">
                             <button type="button" id="traceMoeFetchBtn" disabled>trace.moe</button>
-                        </div>
-                        <div id="imageUrlRow" class="anilist-row" hidden>
-                            <input id="imageUrlInput" type="url" inputmode="url" placeholder="https://…" />
-                            <button type="button" id="traceMoeFetchBtnUrl" disabled>trace.moe</button>
                         </div>
                         <div id="traceMoeMatch" class="trace-match" hidden>
                             <img id="traceMoeThumb" alt="trace.moe matched frame" />
@@ -96,8 +80,14 @@
 
                 <div class="section">
                     <div class="field">
-                        <label>AniList link</label>
+                        <label>Date spotted *</label>
+                        <input name="date_spotted" type="date" required />
+                    </div>
+                </div>
 
+                <div class="section">
+                    <div class="field">
+                        <label>AniList link</label>
                         <div class="anilist-row">
                             <input name="anilist_link" id="anilistInput" type="url" />
                             <button type="button" id="anilistFetchBtn">Fetch</button>
@@ -110,12 +100,10 @@
                         <label>English title</label>
                         <input name="title_en" required />
                     </div>
-
                     <div class="field">
                         <label>Romaji title</label>
                         <input name="title_r" required />
                     </div>
-
                     <div class="field">
                         <label>Japanese title</label>
                         <input name="title_jp" />
@@ -127,7 +115,6 @@
                         <label>Episode</label>
                         <input name="episode" />
                     </div>
-
                     <div class="field">
                         <label>Timestamp</label>
                         <input name="timestamp" />
@@ -156,21 +143,19 @@
                     <div class="field">
                         <label>Notes</label>
                         <p class="hint">Links: [visible text](https://...)</p>
-                        <div class="field">
-                            <textarea name="notes"></textarea>
-                        </div>
+                        <textarea name="notes"></textarea>
                     </div>
                 </div>
 
                 <div class="btn-row">
-                    <button type="submit">Add Sighting</button>
+                    <button type="submit">Save changes</button>
                 </div>
 
                 <div id="result" class="result"></div>
-
             </form>
+        </header>
     </div>
-    <script type="module" src="/js/pages/submit/sighting.js"></script>
+    <script type="module" src="/js/pages/edit-sighting.js"></script>
 </body>
 
 </html>

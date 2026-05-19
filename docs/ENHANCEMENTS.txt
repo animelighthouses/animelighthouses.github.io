@@ -13,20 +13,6 @@ publicUrl for image_link. Prefer verify_jwt and caller JWT so Storage/RLS remain
 Client would call the function then run existing insert logic.
 
 
-2. Sighting edit page (edit.html)
-
-OAuth-gated like other admin forms. Dropdown to pick a sighting; form aligned with submit;
-prefilled fields; refetch AniList; optionally run trace.moe / SauceNAO against the first stored
-image (no new upload — point users to submiti.html for asset changes).
-
-
-3. Admin hub page
-
-Simple admin.html with links to submit, submitl, submiti, and future edit/moderation pages;
-OAuth gated as an extra guard (RLS remains real boundary). Optional footer link near About /
-Home.
-
-
 4. Bookmarkable pagination
 
 Reflect browse page index in the URL (e.g. ?page=2 for page 2; page 0 omits query). Enables

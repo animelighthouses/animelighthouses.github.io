@@ -345,7 +345,7 @@ h2 {
   color: white;
   opacity: 0.55;
   cursor: pointer;
-  transition: opacity 0.15s ease, background 0.15s ease;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
 .image-nav-icon {
@@ -361,7 +361,7 @@ h2 {
 .lightbox-nav:focus-visible {
   opacity: 1;
   background: rgba(0, 0, 0, 0.55);
-  color: white;
+  color: var(--accent);
 }
 
 .card-image-nav[hidden],
@@ -426,6 +426,15 @@ h2 {
 
 .notes {
   margin-top: 1rem;
+}
+
+.notes a:not(.view-anchor):not(.link-item):not(.card-direct-link),
+.notes a:not(.view-anchor):not(.link-item):not(.card-direct-link):visited {
+  color: var(--text-muted);
+}
+
+.notes a:not(.view-anchor):not(.link-item):not(.card-direct-link):hover {
+  color: var(--accent);
 }
 
 .link-icon {
@@ -557,18 +566,19 @@ h2 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  --subtitle-bar-action-height: calc(1.4rem + 0.2rem);
-  min-height: var(--subtitle-bar-action-height);
+  --subtitle-bar-action-size: 2.25rem;
+  min-height: var(--subtitle-bar-action-size);
 }
 
-/* burger button */
+/* burger button — square touch target; icon matches card-direct-link sizing */
 .burger {
-  font-size: 1.4rem;
-  line-height: 1;
   box-sizing: border-box;
-  height: var(--subtitle-bar-action-height);
-  min-height: var(--subtitle-bar-action-height);
-  padding: 0 0.4rem;
+  width: var(--subtitle-bar-action-size);
+  height: var(--subtitle-bar-action-size);
+  min-width: var(--subtitle-bar-action-size);
+  min-height: var(--subtitle-bar-action-size);
+  padding: 0;
+  line-height: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -576,10 +586,17 @@ h2 {
   background-color: var(--surface);
   border: none;
   cursor: pointer;
-  color: var(--text);
+  color: var(--text-muted);
 }
 
-button.burger:hover:not(:disabled) {
+.burger-svg {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+button.burger:hover:not(:disabled),
+button.burger:focus-visible {
   background-color: var(--surface);
   color: var(--accent);
 }

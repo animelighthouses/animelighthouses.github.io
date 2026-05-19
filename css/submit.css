@@ -317,3 +317,40 @@ button {
   border-color: var(--status-danger-border);
   color: var(--status-danger-fg);
 }
+
+/* Admin hub (admin.html) */
+.admin-hub-list[hidden] {
+  display: none !important;
+}
+
+.admin-hub-list {
+  list-style: none;
+  margin: var(--space-5);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-rem-md);
+}
+
+.admin-hub-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.admin-hub-list a {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.admin-hub-list .admin-hub-desc {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.admin-hub-list .admin-hub-soon {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  opacity: 0.7;
+}

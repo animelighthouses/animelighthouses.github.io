@@ -51,7 +51,12 @@ export function bindFilterPanelToggle() {
   const toggleBtn = document.getElementById("menu-toggle");
   const panel = document.getElementById("filter-panel");
   if (!toggleBtn || !panel) return;
-  toggleBtn.addEventListener("click", () => panel.classList.toggle("hidden"));
+  toggleBtn.addEventListener("click", () => {
+    panel.classList.toggle("hidden");
+    const open = !panel.classList.contains("hidden");
+    toggleBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    toggleBtn.setAttribute("aria-label", open ? "Hide filters" : "Show filters");
+  });
 }
 
 /** Light theme switch (off = dark default) → localStorage + `data-theme` on `<html>`. */

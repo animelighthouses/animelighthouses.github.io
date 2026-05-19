@@ -21,17 +21,7 @@ import {
   shortIdHex8
 } from "../imageProcessing.js";
 import { clearResult, setResult } from "./formUtils.js";
-
-function titleForRow(row) {
-  return row?.title_en || row?.title_r || row?.title_jp || "";
-}
-
-function normalizeYmd(dateSpotted) {
-  // Supabase returns date as `YYYY-MM-DD` string for `date` columns in JS clients.
-  const raw = String(dateSpotted ?? "").trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-  return raw.slice(0, 10);
-}
+import { loadSightingsForSelect, normalizeYmd } from "./sightingSelect.js";
 
 function createImageTile({ src, caption, linkHref }) {
   const tile = document.createElement("div");
@@ -87,10 +77,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   );
   await setFormEnabledFromSession({ form, loginBtn, noticeEl });
 
-  /** @type {Array<any>} */
-  let allRows = [];
   /** Map id -> row */
-  const rowById = new Map();
+  let rowById = new Map();
 
   let selectedRow = null;
   /** @type {string[]} */
@@ -219,34 +207,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function loadAllRows() {
     if (!sightingSelect) return;
-    sightingSelect.innerHTML = `<option value="">Loading…</option>`;
-
-    const { data, error } = await supabaseClient
-      .from("sightings")
-      .select("id, date_spotted, title_en, title_r, title_jp, media_id, image_link")
-      .order("date_spotted", { ascending: false })
-      .order("id", { ascending: false });
-
-    if (error) {
-      console.error(error);
-      sightingSelect.innerHTML = `<option value="">Failed to load</option>`;
-      return;
-    }
-
-    allRows = data ?? [];
-
-    rowById.clear();
-    allRows.forEach(r => rowById.set(String(r.id), r));
-
-    sightingSelect.innerHTML = `<option value="">-- Select sighting --</option>`;
-    allRows.forEach(r => {
-      const opt = document.createElement("option");
-      opt.value = String(r.id);
-      const ymd = normalizeYmd(r.date_spotted);
-      const title = titleForRow(r);
-      opt.textContent = `${ymd} — #${r.id}${title ? ` — ${title}` : ""}`;
-      sightingSelect.appendChild(opt);
+    const { rowById: loaded } = await loadSightingsForSelect({
+      selectEl: sightingSelect,
+      columns: "id, date_spotted, title_en, title_r, title_jp, media_id, image_link"
     });
+    rowById = loaded;
   }
 
   sightingSelect?.addEventListener("change", () => {

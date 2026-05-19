@@ -6,7 +6,8 @@
  * - createLink — anchor with optional favicon (used in card body + lighthouse block)
  * - formatSpottedDate — "9 May 2026" UK long form
  * - trimmedDisplay — "" for null/whitespace, trimmed string otherwise
- * - buildSightingCard — the card DOM (image, title, meta row, lighthouse block, notes)
+ * - buildSightingCard — the card DOM (image, title, meta row, lighthouse block, notes;
+ *   notes support [label](https://...) links via noteText.js)
  *
  * Multi-image cards expose left/right nav columns and tap edges; the same
  * controller drives the lightbox so card thumbnail and lightbox stay in sync.
@@ -20,6 +21,7 @@ import {
   syncLightboxNavVisibility
 } from "./lightbox.js";
 import { createImageNavIcon } from "./imageNavIcon.js";
+import { appendFormattedNoteText } from "./noteText.js";
 import { sightingSharePath } from "./sightingLink.js";
 
 const SVG_VIEW_BOX = "0 -960 960 960";
@@ -343,7 +345,7 @@ export function buildSightingCard(entry, { titleMode, recentImageSlot = false } 
     label.textContent = "Notes: ";
 
     const text = document.createElement("span");
-    text.textContent = entry.notes;
+    appendFormattedNoteText(text, entry.notes);
 
     notesDiv.appendChild(label);
     notesDiv.appendChild(text);

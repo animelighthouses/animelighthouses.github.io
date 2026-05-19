@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<!-- Maintainer admin hub. Entry: /js/pages/admin.js -->
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin</title>
+    <script src="/js/theme-boot.js"></script>
+    <link rel="stylesheet" href="/css/main.css" />
+    <link rel="stylesheet" href="/css/submit.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Admin</h1>
+            <!-- include: partials/admin-subtitle.html -->
+            <div class="subtitle-bar">
+              <div class="subtitle">
+                <span class="view-link"><a class="view-anchor" href="/admin">Admin</a></span>
+                |
+                <span class="view-link"><a class="view-anchor" href="/">Home</a></span>
+              </div>
+
+              <button id="loginBtn">Login</button>
+            </div>
+            <p id="submitAdminNotice" class="submit-auth-notice" hidden>
+              Only administrators may use these tools. Please sign in with an authorized account to continue.
+            </p>
+            <!-- /include -->
+
+            <ul id="adminHubList" class="admin-hub-list" aria-label="Admin tools" hidden>
+                <li>
+                    <a href="/submit">Add sighting</a>
+                    <p class="admin-hub-desc">New sighting with image upload and identification helpers.</p>
+                </li>
+                <li>
+                    <a href="/submitl">Add lighthouse</a>
+                    <p class="admin-hub-desc">New real-world lighthouse reference row.</p>
+                </li>
+                <li>
+                    <a href="/submiti">Edit images</a>
+                    <p class="admin-hub-desc">Reorder, delete, or upload images for an existing sighting.</p>
+                </li>
+                <li>
+                    <a href="/edit">Edit sighting</a>
+                    <p class="admin-hub-desc">Update metadata for an existing sighting (not images).</p>
+                </li>
+                <li>
+                    <span class="admin-hub-soon">Review submissions (coming soon)</span>
+                    <p class="admin-hub-desc">Moderate public submissions into the main catalogue.</p>
+                </li>
+            </ul>
+        </header>
+    </div>
+    <script type="module" src="/js/pages/admin.js"></script>
+</body>
+
+</html>

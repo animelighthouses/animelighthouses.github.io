@@ -22,8 +22,11 @@ Maintenance: bump numbers or wording here when UX or integrations change.
 - /submit → submit.html (authenticated sighting insert)
 - /submitl → submitl.html (authenticated lighthouse insert)
 - /submiti → submiti.html (authenticated image reorder/upload for existing sightings; not in tab strip)
+- /admin → admin.html (maintainer hub; OAuth login + links to submit tools)
+- /edit → edit.html (authenticated sighting metadata update; not in tab strip)
 
 Shared chrome behaviour is implemented in js/nav.js (Recent vs List, submit subtabs).
+Footer site links (partials/footer-links.html) include Home, About, and Admin.
 
 
 2. Data backend (Supabase)
@@ -48,7 +51,8 @@ security boundary is server policy, not UI state.
 3. Browse — Recent (index.html)
 
 - Card layout: date row (with optional direct-link icon when id is set), image(s), title (per
-  title mode), episode/timestamp line, AniList link, optional real-lighthouse block, notes.
+  title mode), episode/timestamp line, AniList link, optional real-lighthouse block, notes
+  ([label](https://...) in notes renders as hyperlinks on the card).
 - Direct link: top-right of the date row, Material link icon (currentColor); tooltip/aria-label
   “Direct link”; navigates to /sighting?id=<id> (same card on the share page).
 - Episode/timestamp line uses trimmed fields only: no placeholder when one side is missing;
@@ -186,29 +190,52 @@ Pick sighting (newest-first list). Reorder, mark delete, upload more with same r
 pipeline. Save updates image_link and removes Storage objects for deleted URLs.
 
 
-10. External dependencies (browser)
+10. Admin hub (admin.html)
+
+- OAuth via submitAuth.js (login/logout; notice when logged out). Hub link list is hidden
+  until a session exists; each tool page still gates writes.
+- Links: Add sighting (/submit), Add lighthouse (/submitl), Edit images (/submiti),
+  Edit sighting (/edit). Placeholder line for future public-submission moderation (#6).
+
+
+11. Edit sighting (edit.html)
+
+- Same auth pattern as other submit-family pages (form disabled until session).
+- Sighting dropdown (newest first; shared loader in js/pages/sightingSelect.js). Optional
+  ?id= query pre-selects a row after load.
+- Form mirrors submit metadata fields (no image upload). Save runs UPDATE on sightings
+  (image_link omitted — use submiti for images).
+- Stored-image section: read-only preview of image_link[0]; trace.moe and SauceNAO use URL
+  mode against that URL; hint links to submiti when no image.
+- AniList Fetch overwrites titles on click; media_id / media_type from cache on save.
+- Subtitle: Admin, Edit images, Home (admin-subtitle pattern).
+
+
+12. External dependencies (browser)
 
 - AniList GraphQL, trace.moe search API, SauceNAO (via edge function only from the client).
 - pica@9.0.1 (CDN) for resize before WebP.
 - @supabase/supabase-js v2 from CDN.
 
 
-11. Styling and entrypoints
+13. Styling and entrypoints
 
-- css/main.css everywhere; css/submit.css on submit*.html.
+- css/main.css everywhere; css/submit.css on submit*, admin.html, and edit.html.
 - Module scripts per page; see file headers in js/ for page-specific behaviour.
 - Shared HTML chunks live in /partials/ and are composed into top-level *.html
   by `npm run build:html` (tools/build-html.mjs). Edit a partial then re-run
   the script before committing.
 
 
-12. Module map (maintainer index)
+14. Module map (maintainer index)
 
 Page entries:
 - js/main.js — Recent controller (index.html).
 - js/index.js — List view controller (list.html).
 - js/pages/about.js — theme switch on About only (about.html).
 - js/pages/view-sighting.js — shared sighting page (sighting.html).
+- js/pages/admin.js — admin hub (admin.html).
+- js/pages/edit-sighting.js — sighting metadata editor (edit.html).
 - js/pages/submit/sighting.js — sighting submit orchestrator (submit.html).
 - js/pages/submit-lighthouse.js — lighthouse submit (submitl.html).
 - js/pages/submit-image.js — image editor for existing rows (submiti.html).
@@ -231,7 +258,8 @@ Cross-cutting helpers:
 - js/imageProcessing.js — STORAGE_BUCKET, validation, pica resize + WebP encode, public URL parser.
 - js/pages/formUtils.js — nullifyEmptyStrings, setResult, clearResult.
 - js/pages/aniListClient.js — parseAniListUrl, fetchAniListById, applyAniListMediaToBlankTitles, acceptAniListId, createMediaCache.
-- js/pages/submitAuth.js — shared OAuth gating for submit flows.
+- js/pages/submitAuth.js — shared OAuth gating for submit and admin flows.
+- js/pages/sightingSelect.js — shared sightings dropdown loader (submiti, edit).
 
 Foundation:
 - js/theme-boot.js — pre-paint theme from localStorage (key must match preferences.js).
