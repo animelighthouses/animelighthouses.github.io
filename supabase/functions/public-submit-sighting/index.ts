@@ -10,7 +10,7 @@ const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const MAX_SUBMISSIONS_PER_DAY = 5;
+const MAX_SUBMISSIONS_PER_DAY = 50;
 const IP_SALT = Deno.env.get("PUBLIC_SUBMIT_IP_SALT") ?? "animelighthouse-public-submit-v1";
 
 function json(body: unknown, status = 200) {

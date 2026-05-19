@@ -191,7 +191,7 @@ prefecture auto-select when pasting a lighthouse-japan.com URL whose path matche
 - No OAuth. Single basic form: image URL and/or AniList media URL (at least one required;
   AniList must be anilist.co/anime/… or anilist.co/manga/…), notes, optional username, honeypot.
 - Chrome: subtitle bar (Home), site footer (light-theme toggle + footer links). No staff login link.
-- POST via Edge Function public-submit-sighting (verify_jwt false): honeypot, rate limit per ip_hash,
+- POST via Edge Function public-submit-sighting (verify_jwt false): honeypot, rate limit 50/day per ip_hash,
   optional silent AniList enrichment in enrichment jsonb.
 - Footer link Submit between About and Admin.
 
