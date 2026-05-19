@@ -1,0 +1,11 @@
+Situation
+
+Currently, when I see a lighthouse in an anime or manga, I take a screenshot, note the title, sometimes make a note of the episode or chapter, and add it to a list that I have posted on a social-media website.
+
+While this is functional and a fun thing to do, the list has continued to grow until it now has over 100 entries. Images are hosted across various websites, and it is becoming increasingly difficult to keep track of everything. I have to manually add each entry to the chronological list, as well as maintain an alphabetical list separated by media type.
+
+If I think the lighthouse is based on a real lighthouse, I sometimes look up the lighthouse and post information or links.
+
+In addition, sometimes people tag me when they spot a lighthouse in anime or manga. I try to add these to the list, but it is difficult to keep track of everything.
+
+To better manage all these sightings, I think a database would be a good solution. 

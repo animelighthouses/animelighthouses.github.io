@@ -1,5 +1,5 @@
 # Local-only documents (not for GitHub Pages)
-docs/
+# docs/
 .cursor/
 
 # Local backups (npm run backup:images).

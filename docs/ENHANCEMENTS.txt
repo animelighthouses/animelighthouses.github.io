@@ -1,0 +1,81 @@
+Enhancements (backlog only)
+===========================
+
+Items here are not committed product promises — they are ideas and future work. Shipped
+behaviour is documented in FEATURES.txt; product intent in PRD.txt.
+
+
+1. URL-only image submit (complete URL mode)
+
+Allow insert when only an image URL is provided: e.g. Edge Function to fetch the URL
+server-side, enforce size/type caps, resize/encode WebP, upload to sightings-images, return
+publicUrl for image_link. Prefer verify_jwt and caller JWT so Storage/RLS remain authoritative.
+Client would call the function then run existing insert logic.
+
+
+2. Sighting edit page (edit.html)
+
+OAuth-gated like other admin forms. Dropdown to pick a sighting; form aligned with submit;
+prefilled fields; refetch AniList; optionally run trace.moe / SauceNAO against the first stored
+image (no new upload — point users to submiti.html for asset changes).
+
+
+3. Admin hub page
+
+Simple admin.html with links to submit, submitl, submiti, and future edit/moderation pages;
+OAuth gated as an extra guard (RLS remains real boundary). Optional footer link near About /
+Home.
+
+
+4. Bookmarkable pagination
+
+Reflect browse page index in the URL (e.g. ?page=2 for page 2; page 0 omits query). Enables
+sharing and browser back/forward alignment with paging.
+
+
+6. Public submission pipeline
+
+Separate table for unsolicited rows; moderation UI to approve into sightings or reject.
+Likely rename current admin submit path for clarity (e.g. submitadmin vs public submit).
+Spam controls, optional rate limiting, separate Storage bucket for unauthenticated uploads,
+optional email on new queue rows. Footer entry points (Submit / Admin) if adopted.
+- General flow: user enters data -> separate table to hold new submissions -> admin page to review rows (adjust fields to match main lighthouse table; admin review page matches main admin submission form but partially prefilled from submitted data) -> admin approves and row is sent to main sightings table and deleted from separate public table.
+- Idea: basic/advance toggle for basic form (image upload, anilist media link, notes (free text), username (free text)) and advance form (full admin-style submission page).
+- Automatically add to notes field: "Thanks <username>!" if username is provided.
+- Possible hidden api integrations on simple form (run silently, log results in the table without user being aware).
+
+
+7. Contact / feedback form
+
+Lightweight public message table (text; optional name/contact). Anti-abuse measures; email
+notifications to maintainer.
+
+
+8. Optional media normalization
+
+Dedicated media table keyed by AniList id — fewer repeated fetches; room for richer media
+metadata. Evaluate friction for sightings without AniList linkage (fallback UX).
+
+
+9. Preserve List expansion state when changing footer settings
+
+The List view (list.html) has no pagination today; instead, rows can be
+expanded into full sighting cards. Toggling unrelated preferences (theme, title
+mode) should not collapse the currently expanded rows. Currently every footer
+control change calls back through bindCommonControls -> renderIndexView which
+clears the `expanded` set first.
+
+Changing preferences on index.html also reset pagination (returns to page 0). This should not happen, so avoid resetting page position when toggling unrelated preferences on index.html.
+
+
+10. Carousel: preload adjacent image
+
+Preload currentIndex+1 in lightbox/card carousel for smoother advance.
+
+
+11. Schema split exploration (separate tables for anime vs manga sightings)
+
+Separate tables to drop media_type ambiguity and optionally use chapter vs episode fields;
+evaluate submit complexity and incomplete-metadata cases.
+
+- Cons: submit button becomes more complex; relies on AniList url to determine which table it needs to be added to; would need to add media type dropdown to submit form for when anilist link isnt available (possibly fallback general url).

@@ -1,0 +1,115 @@
+Anime Lighthouse Index — architecture notes
+============================================
+
+Companion to FEATURES.txt (which describes shipped behaviour) and SCHEMA.txt
+(which describes the database). This file explains how the JS modules and
+HTML pages fit together so a new contributor (human or AI) can find the right
+place to make a change.
+
+Site shape
+----------
+Static HTML + ES modules served by GitHub Pages. No bundler, no framework, no
+runtime build.
+
+  /                    -> index.html        Recent sightings (cards, paginated)
+  /list                -> list.html         Compact list (one line per row, expand for card)
+  /about               -> about.html        Static about page
+  /submit              -> submit.html       Auth-gated sighting submit
+  /submitl             -> submitl.html      Auth-gated lighthouse reference submit
+  /submiti             -> submiti.html      Auth-gated image editor for an existing sighting
+
+Each HTML page loads exactly one entry-point module (see "Module map" in
+FEATURES.txt §12) plus the appropriate stylesheet.
+
+Module layers
+-------------
+
+  Foundation     theme-boot.js, preferences.js, supabaseClient.js,
+                 dataservice.js, nav.js
+                 -> stable, no UI assumptions
+
+  Browse layer   js/browse/{lightbox,card,filters,controls,index}.js
+                 -> reused by main.js (Recent), index.js (List), about.js
+                    (theme switch only)
+
+  Submit layer   js/pages/submit/{lookupUi,traceMoe,sauceNao,sighting}.js
+                 -> sighting.js orchestrates; the others are unaware of the form
+
+  Helpers        js/imageProcessing.js (consumed by sighting.js + submit-image.js)
+                 js/pages/formUtils.js (consumed by all submit pages)
+                 js/pages/aniListClient.js (consumed by sighting.js)
+                 js/pages/submitAuth.js (consumed by all submit pages)
+
+Module dependency graph
+-----------------------
+
+  index.html         -> js/main.js                -> dataservice + browse/* + nav + preferences
+  list.html          -> js/index.js               -> dataservice + browse/* + nav + preferences
+  about.html         -> js/pages/about.js         -> browse/controls (theme switch only)
+  submit.html        -> js/pages/submit/sighting  -> submit/* + imageProcessing + aniListClient
+                                                  + formUtils + submitAuth + nav
+  submitl.html       -> js/pages/submit-lighthouse-> formUtils + submitAuth + nav
+  submiti.html       -> js/pages/submit-image     -> imageProcessing + formUtils + submitAuth + nav
+
+Browse-state contract
+---------------------
+The shape `BrowseState` is defined once in js/browse/filters.js and consumed
+by js/browse/controls.js, js/main.js, and js/index.js. Treat it as the
+canonical filter/sort/title state shared between Recent and List.
+
+Submit lookup contract
+----------------------
+trace.moe and SauceNAO share the same DOM contract on submit.html (status
+text + match panel + Insert + Clear). createLookupUi(ids) in submit/lookupUi.js
+abstracts that contract so the two service modules only need to know how to
+query upstream and how to compose a meta-text line.
+
+Both lookups feed accepted matches through aniListClient.acceptAniListId,
+which never overwrites manually entered titles — it only fills blanks and
+refines media_type.
+
+HTML composition (partials)
+---------------------------
+Every shared HTML chunk (browse subtitle bar, filter panel, footer theme row,
+footer links, submit subtitle bar) lives in /partials/. Top-level *.html
+files reference them via:
+
+  <!-- include: partials/browse-subtitle.html -->
+  ...rendered content...
+  <!-- /include -->
+
+Workflow:
+  1. Edit a partial in /partials/.
+  2. Run `npm run build:html` (alias for `node tools/build-html.mjs`).
+  3. Commit the partial and the regenerated *.html together.
+
+The script normalizes CRLF to LF before matching and recognises optional
+carriage returns after each `<!-- include: … -->` line so paired blocks span
+correctly — otherwise only the opener is replaced each run (duplicate markup
+plus stray `<!-- /include -->`). Output is LF-only like the repo default.
+
+The script is idempotent and can be wired into a pre-commit hook later if
+desired. GitHub Pages serves the regenerated static HTML — there is no
+runtime template engine.
+
+Where do I add a new browse filter?
+-----------------------------------
+1. Add the form control to /partials/browse-filter-panel.html.
+2. Run the partial build so index.html and list.html pick it up.
+3. Extend the BrowseState typedef in js/browse/filters.js with the new field.
+4. Initialize the field in the inline `state` objects in js/main.js and
+   js/index.js (use the persisted-preference helpers in js/preferences.js if
+   the value should survive reloads).
+5. Wire the input -> state plumbing in js/browse/controls.js
+   (bindCommonControls).
+6. Apply the predicate in filterAndSortSightings inside js/browse/filters.js.
+7. Update FEATURES.txt §5 if user-visible.
+
+Where do I add a new submit page?
+---------------------------------
+1. Copy /partials/submit-subtitle.html include marker into a new <header>
+   block in your new HTML page.
+2. Run the partial build.
+3. Add an entry-point module under js/pages/ that wires submitAuth +
+   formUtils + (optional imageProcessing).
+4. Update FEATURES.txt §1 (routes) and §12 (module map).

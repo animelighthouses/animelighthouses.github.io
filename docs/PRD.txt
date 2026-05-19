@@ -1,0 +1,84 @@
+Product Requirements Document (PRD)
+Project: Anime Lighthouse Index
+Site: GitHub Pages (repo animelighthouses.github.io)
+
+This document describes why the product exists, for whom, and what “good” looks like at a
+high level. It does not duplicate route-by-route behaviour — see FEATURES.txt. Backlog lives
+only in ENHANCEMENTS.txt. Database facts live in SCHEMA.txt.
+
+
+1. Problem
+
+Maintaining a growing list of lighthouse sightings in anime/manga across ad hoc notes,
+screenshots hosted in many places, and social posts becomes hard to search, reconcile, and
+share. Contributions from others are easy to lose. Linking sightings to real lighthouses
+when relevant is tedious without structured fields.
+
+
+2. Product vision
+
+A fast, readable public catalogue of sightings with minimal infrastructure: static pages that
+talk to Supabase for data and Storage for images. Maintenance stays practical for one or a few
+trusted editors while visitors get filtering, search, and consistent presentation.
+
+
+3. Primary audiences
+
+- Visitors discovering or researching lighthouse appearances by title, lighthouse, or media type.
+- Maintainer(s): authenticated submission of sightings, lighthouse references, and image
+  management; assisted metadata via AniList and optional reverse-image hints on the submit form.
+
+
+4. Goals
+
+- Make the full dataset easy to browse in two modes (rich cards vs compact index).
+- Keep search and filters client-side for responsiveness given a small corpus (order of hundreds
+  of rows).
+- Reduce manual data entry friction for sightings (titles from AniList; optional screenshot tools)
+  without overriding deliberate editor choices.
+- Preserve a clear separation between public browsing and gated writes (Auth + RLS + Storage).
+
+
+5. Scope
+
+In scope:
+
+- Static site (HTML/CSS/vanilla ES modules), no bundler requirement for shipping.
+- Supabase Postgres + Auth + Storage as the system of record for sightings and lighthouse rows.
+- Public read paths; restricted write paths aligned with maintainer workflow.
+
+Explicit non-goals (today):
+
+- Public self-service accounts or crowdsourced writes without moderation (see backlog).
+- Dedicated server-rendered app or first-party REST layer in-repo.
+- Automated image moderation beyond client-side sizing/type limits and operational discipline.
+
+Operational detail for what is shipped: FEATURES.txt.
+
+
+6. Success criteria (qualitative)
+
+- A new visitor can find a sighting or narrow the list without instructions.
+- A maintainer can add a sighting with image and core metadata in one session, with optional
+  assist from AniList and lookup tools without corrupting manually entered fields.
+- The site stays fast on typical connections for the expected dataset size.
+- Breaking changes to data shape remain rare and documented (SCHEMA + cache key bumps).
+
+
+7. Constraints and risks
+
+- Static hosting implies client-exposed anon key and reliance on RLS/policies.
+- External APIs (AniList, trace.moe, SauceNAO) introduce availability and quota variance;
+  submits must remain possible without them.
+- Client-side image processing is best-effort; no virus scanning pipeline in-repo.
+
+See ENHANCEMENTS.txt for prioritized ideas and SCHEMA.txt for policy details.
+
+
+8. Related documents
+
+- docs/README.txt — how to navigate this folder.
+- docs/FEATURES.txt — shipped behaviour reference.
+- docs/ENHANCEMENTS.txt — future work only.
+- docs/SCHEMA.txt — tables, enums, RLS snapshot.
+- docs/SITUATION.txt — informal origin narrative.

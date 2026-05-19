@@ -1,0 +1,241 @@
+Anime Lighthouse Index — Shipped features (reference)
+======================================================
+
+Purpose: Accurate catalogue of behaviour in the deployed static app and its
+integrations. Behaviour is defined by the repo (HTML/CSS/JS) and Supabase;
+this file summarizes it for onboarding and discussion. Companion docs:
+
+- PRD.txt        — problem, intent, audience, scope, success signals
+- ENHANCEMENTS.txt — backlog only (not shipped)
+- SCHEMA.txt      — Postgres tables, enums, RLS
+- SITUATION.txt   — why the project exists
+
+Maintenance: bump numbers or wording here when UX or integrations change.
+
+
+1. Routes (no client-side router — plain HTML + ES modules)
+
+- / → index.html (Recent)
+- /list → list.html (compact list rows)
+- /about → about.html
+- /sighting → sighting.html (single shared sighting; ?id= numeric sightings.id)
+- /submit → submit.html (authenticated sighting insert)
+- /submitl → submitl.html (authenticated lighthouse insert)
+- /submiti → submiti.html (authenticated image reorder/upload for existing sightings; not in tab strip)
+
+Shared chrome behaviour is implemented in js/nav.js (Recent vs List, submit subtabs).
+
+
+2. Data backend (Supabase)
+
+Authoritative columns and policies: SCHEMA.txt.
+
+Headlines relevant to UX:
+
+- sightings: titles (EN / romaji / JP), date_spotted (required), optional episode &
+  timestamp text, optional anilist_link, image_link text[] (public URLs), notes,
+  lighthouse_type (real | fictional | unidentified; default fictional), optional
+  lighthouse_id, media_type (anime | manga | other), media_id when filled via AniList.
+- lighthouses: names, prefecture, external links (Wikipedia EN/JP, Maps, Lighthouse-JAPAN), notes_l.
+- Storage: public-read bucket sightings-images; objects under sightings/; submit flows
+  append uploaded WebP public URLs into image_link.
+
+RLS allows world read; inserts/updates for sightings and lighthouses are restricted to the
+maintainer account (see SCHEMA). js/supabaseClient.js holds the project URL and anon key;
+security boundary is server policy, not UI state.
+
+
+3. Browse — Recent (index.html)
+
+- Card layout: date row (with optional direct-link icon when id is set), image(s), title (per
+  title mode), episode/timestamp line, AniList link, optional real-lighthouse block, notes.
+- Direct link: top-right of the date row, Material link icon (currentColor); tooltip/aria-label
+  “Direct link”; navigates to /sighting?id=<id> (same card on the share page).
+- Episode/timestamp line uses trimmed fields only: no placeholder when one side is missing;
+  both present join as “ep / ts”; only one present shows that value alone; whitespace-only
+  values are ignored. AniList link still renders when episode/timestamp are empty.
+- When image_link has more than one URL, the title row uses a two-column layout: title text
+  wraps in the left column; the right column shows a small photo-library-style icon (Material-style
+  glyph, inline SVG with currentColor matching --text-muted). Tooltip and aria-label on the wrapper
+  still include the image count; collapsed List rows do not show the icon (only the expanded card
+  from buildSightingCard).
+- Multi-image: card and lightbox share index; ~10% width edge tap zones and ArrowLeft/ArrowRight;
+  zones hide at ends; lightbox closes on backdrop/image click or Escape.
+- Re-renders from filter/sort/search/page change close an open lightbox first.
+- Pagination: 10 per page; first/prev/next/last + range label; filter changes reset to page 0;
+  scroll anchors to main content once after page moves.
+- Page nav position: footer selector (Top / Bottom / Both), stored in localStorage
+  (js/preferences.js).
+- Recent card image area: `.card--recent` applies a full-width 16:10 aspect box (capped with
+  `max-height: 80vh`) so layout height is reserved before the hero decodes; `overflow: hidden`
+  clips the slot; the hero `<img>` is `position: absolute` inside the wrap with `object-fit:
+  contain` and `max-width`/`max-height: 100%` so painting stays inside the slot (including
+  portrait shots on iOS Safari).
+- Hero loading: lazy on card heroes; next page’s first image per card is warmed with `Image()`
+  after render (js/main.js).
+
+
+4. Browse — List (list.html)
+
+- Compact rows: one line shows active title mode (fallback title_en), optional “ — <episode>”
+  when episode is non-empty after trim (disambiguates duplicate titles), then optional
+  “ (lighthouse name en)” for real sightings; expand toggles the full card as on Recent.
+- First expand builds and caches card DOM per row.
+- Toolbar: Collapse All (disabled when nothing expanded), live filtered count.
+
+
+4.1 Shared sighting (sighting.html)
+
+- Query ?id= must be a positive integer sightings.id; missing, invalid, or not found → redirect
+  to / (no error page).
+- One card via buildSightingCard (Recent-style image slot); fetchSightingById in dataservice.js
+  (not the full-list sessionStorage cache).
+- Chrome: site header (Recent • List, no filter burger), footer theme + Titles only (no PAGE
+  NAV), Home/About links.
+- document.title updates from the loaded row and active title mode.
+
+
+5. Search, filters, sort, titles, theme
+
+- Search: case-insensitive substring across primitive fields, arrays, and nested objects on
+  each row; debounced ~200 ms (js/browse/controls.js).
+- Filters: media type checkboxes (anime/manga; “other” passes when either is on); “real
+  lighthouses only”; lighthouse dropdown from distinct joined names.
+- Filter panel footer: live filtered result count (bottom left; “N results” / “1 result”);
+  Reset (bottom right) restores panel defaults — Recent: newest sort; List: A–Z — without
+  changing title mode, page nav position, or theme. Reset is disabled when filters already
+  match defaults.
+- Sort: newest/oldest by date_spotted; A–Z / Z–A by active title field. Defaults: Recent =
+  newest; List = A–Z.
+- Title mode: English / Romaji / Japanese (footer); persisted in localStorage.
+- Theme: dark default; light via footer switch; animelighthouse.theme + theme-boot.js in <head>
+  to reduce flash.
+
+
+6. Client-side browse cache
+
+- After a successful fetch, rows are cached in sessionStorage (animelighthouses.sightings.v1)
+  with TTL SIGHTINGS_CACHE_TTL_MS in js/dataservice.js. Bump the key suffix if the cached
+  shape changes.
+
+
+7. Submit — sighting (submit.html)
+
+- Auth: GitHub OAuth via Supabase; all controls disabled until session exists; admin-oriented
+  copy when logged out; RLS is authoritative.
+- Image source: label toggle Upload vs URL. URL mode is lookup-only for trace.moe and SauceNAO;
+  final insert still requires a local file for the image pipeline (see ENHANCEMENTS for
+  possible URL-only path).
+- Fields (current vertical order): date_spotted (default today), image file + trace.moe control
+  row, URL row for lookups, SauceNAO key + button row, AniList URL + Fetch, EN and romaji
+  titles (required in form), optional JP title, optional episode/timestamp, Real? + lighthouse
+  select when real, notes.
+- Upload pipeline: input cap MAX_IMAGE_BYTES (12 MB); pica resize capped at 1920×1920;
+  Web encode to WebP; path pattern sightings/<date>[_<anilist-media-id>]_<random8>.webp;
+  at most one new image per insert (multi-image via submiti).
+- Nulls: empty strings become null where applicable; lighthouse_type/id from Real checkbox.
+
+7.1 trace.moe (submit)
+
+- Upload mode: POST raw bytes to https://api.trace.moe/search?anilistInfo=1&cutBorders
+  (no API key). URL mode: same endpoint with url= query parameter.
+- Tiers from TRACE_HIGH / TRACE_LOW in js/pages/submit-sighting.js (currently 0.9 /
+  0.75 respectively). Strong / Possible tiers show Insert; below low shows warning and
+  no Insert; thumbnail still shown for feedback.
+- Insert: overwrite episode + timestamp only (formatter: numeric episodes use E-prefix with
+  leading zero for 0–9; non-numeric pass-through; null episode stays empty — never lone “E”);
+  chained AniList GraphQL for blank titles and media_type refinement. anilist_link, media keys,
+  and titles fill only when currently empty.
+
+7.2 SauceNAO backup (submit)
+
+- Key stored in localStorage as animelighthouse.saucenaoKey (not committed).
+- Browser calls SauceNAO through Supabase Edge Function saucenao-proxy (CORS workaround);
+  invokes with authenticated client (functions.invoke).
+- Search constrained to Anime* index (db=21). Parsing: data.part → episode, data.est_time
+  left segment → timestamp, data.anilist_id → AniList id when present. header.similarity
+  vs SAUCE_HIGH / SAUCE_LOW (80 / 60) for tiering; same Insert/Clear UX pattern as trace.moe
+  at a high level (episode/timestamp overwrite; other fields fill-if-empty; optional AniList
+  chain).
+
+7.3 AniList (submit)
+
+- Parse anilist.co anime/manga URLs for numeric id; GraphQL to https://graphql.anilist.co.
+- On successful submit, media_id and media_type included when available from cache.
+
+7.4 Filename hints (submit upload)
+
+- On valid image file select, parse file.name and overwrite matching fields when a pattern
+  matches (no clear when a pattern is absent).
+- Timestamp: `\d+h_\d+m_\d+s` with optional fractional seconds (ignored) → `hh:mm:ss` via
+  formatTimestamp in js/pages/submit/traceMoe.js; last match wins.
+- Episode: `S\d+E\d+` first (season ignored, formatEpisode); else if filename contains
+  SubsPlease, ` - NN (1080p)` → formatEpisode; last match per regex. trace.moe / SauceNAO
+  Insert still overwrite episode + timestamp when used.
+
+
+8. Submit — lighthouse (submitl.html)
+
+Same auth pattern. Fields for names, links, prefecture (full Japan list), notes. Optional
+prefecture auto-select when pasting a lighthouse-japan.com URL whose path matches a label.
+
+
+9. Submit — images (submiti.html)
+
+Pick sighting (newest-first list). Reorder, mark delete, upload more with same resize/WebP
+pipeline. Save updates image_link and removes Storage objects for deleted URLs.
+
+
+10. External dependencies (browser)
+
+- AniList GraphQL, trace.moe search API, SauceNAO (via edge function only from the client).
+- pica@9.0.1 (CDN) for resize before WebP.
+- @supabase/supabase-js v2 from CDN.
+
+
+11. Styling and entrypoints
+
+- css/main.css everywhere; css/submit.css on submit*.html.
+- Module scripts per page; see file headers in js/ for page-specific behaviour.
+- Shared HTML chunks live in /partials/ and are composed into top-level *.html
+  by `npm run build:html` (tools/build-html.mjs). Edit a partial then re-run
+  the script before committing.
+
+
+12. Module map (maintainer index)
+
+Page entries:
+- js/main.js — Recent controller (index.html).
+- js/index.js — List view controller (list.html).
+- js/pages/about.js — theme switch on About only (about.html).
+- js/pages/view-sighting.js — shared sighting page (sighting.html).
+- js/pages/submit/sighting.js — sighting submit orchestrator (submit.html).
+- js/pages/submit-lighthouse.js — lighthouse submit (submitl.html).
+- js/pages/submit-image.js — image editor for existing rows (submiti.html).
+
+Browse layer (consumed by main.js, index.js, about.js):
+- js/browse/index.js — barrel re-export.
+- js/browse/card.js — buildSightingCard, createLink, formatSpottedDate, trimmedDisplay.
+- js/browse/sightingLink.js — sightingSharePath.
+- js/browse/lightbox.js — singleton lightbox + closeLightboxIfOpen.
+- js/browse/filters.js — filterAndSortSightings, populateLighthouseFilter, BrowseState typedef.
+- js/browse/controls.js — bindCommonControls, bindTitleMode, bindAppearanceMode, bindFilterPanelToggle, scroll helpers.
+
+Submit layer (consumed by submit/sighting.js):
+- js/pages/submit/lookupUi.js — generic Insert/Clear/status/match-thumb factory.
+- js/pages/submit/traceMoe.js — endpoint, thresholds, query, episode/timestamp formatters.
+- js/pages/submit/filenameHints.js — upload filename episode/timestamp prefill.
+- js/pages/submit/sauceNao.js — endpoint, thresholds, query, est_time parser, key storage.
+
+Cross-cutting helpers:
+- js/imageProcessing.js — STORAGE_BUCKET, validation, pica resize + WebP encode, public URL parser.
+- js/pages/formUtils.js — nullifyEmptyStrings, setResult, clearResult.
+- js/pages/aniListClient.js — parseAniListUrl, fetchAniListById, applyAniListMediaToBlankTitles, acceptAniListId, createMediaCache.
+- js/pages/submitAuth.js — shared OAuth gating for submit flows.
+
+Foundation:
+- js/theme-boot.js — pre-paint theme from localStorage (key must match preferences.js).
+- js/preferences.js — theme, title mode, page-nav position.
+- js/supabaseClient.js — createClient default export (publishable anon key; RLS is the boundary).
+- js/dataservice.js — fetchSightings, fetchSightingById + sessionStorage cache; SightingRow typedefs.
+- js/nav.js — initViewNav, initSubmitNav.
