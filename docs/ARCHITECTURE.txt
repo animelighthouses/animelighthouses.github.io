@@ -14,11 +14,13 @@ runtime build.
   /                    -> index.html        Recent sightings (cards, paginated)
   /list                -> list.html         Compact list (one line per row, expand for card)
   /about               -> about.html        Static about page
-  /submit              -> submit.html       Auth-gated sighting submit
+  /submit              -> submit.html       Public submission (Edge Function queue)
+  /submit-admin        -> submit-admin.html Auth-gated sighting insert
   /submitl             -> submitl.html      Auth-gated lighthouse reference submit
   /submiti             -> submiti.html      Auth-gated image editor for an existing sighting
   /admin               -> admin.html        Maintainer hub (links to submit tools)
   /edit                -> edit.html         Auth-gated sighting metadata editor
+  /review              -> review.html       Auth-gated public submission moderation
 
 Each HTML page loads exactly one entry-point module (see "Module map" in
 FEATURES.txt §12) plus the appropriate stylesheet.
@@ -49,7 +51,8 @@ Module dependency graph
   index.html         -> js/main.js                -> dataservice + browse/* + nav + preferences
   list.html          -> js/index.js               -> dataservice + browse/* + nav + preferences
   about.html         -> js/pages/about.js         -> browse/controls (theme switch only)
-  submit.html        -> js/pages/submit/sighting  -> submit/* + imageProcessing + aniListClient
+  submit.html        -> js/pages/public-submit.js -> supabase.functions public-submit-sighting
+  submit-admin.html  -> js/pages/submit/sighting  -> submit/* + imageProcessing + aniListClient
                                                   + formUtils + submitAuth + nav
   submitl.html       -> js/pages/submit-lighthouse-> formUtils + submitAuth + nav
   submiti.html       -> js/pages/submit-image     -> imageProcessing + formUtils + submitAuth + nav
@@ -57,6 +60,8 @@ Module dependency graph
   admin.html         -> js/pages/admin.js         -> submitAuth
   edit.html          -> js/pages/edit-sighting.js -> submit/* lookups + aniListClient
                                                   + formUtils + submitAuth + sightingSelect
+  review.html        -> js/pages/review-submission.js -> submit/* + imageProcessing
+                                                  + submissionSelect + sightingFormPayload + RPC
 
 Browse-state contract
 ---------------------

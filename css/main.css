@@ -123,7 +123,8 @@ select {
 
 input::placeholder,
 textarea::placeholder {
-  color: var(--text-muted);
+  color: color-mix(in srgb, var(--text-muted) 48%, var(--bg));
+  opacity: 1;
 }
 
 button {

@@ -1,176 +1,126 @@
 <!DOCTYPE html>
-<!-- Submit a sighting. Entry: /js/pages/submit/sighting.js -->
+<!-- Public sighting submission. Entry: /js/pages/public-submit.js -->
 <html lang="en">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Submit a sighting</title>
+    <title>Submit | Anime Lighthouse Index</title>
     <script src="/js/theme-boot.js"></script>
     <link rel="stylesheet" href="/css/main.css" />
     <link rel="stylesheet" href="/css/submit.css" />
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pica@9.0.1/dist/pica.min.js"></script>
 </head>
 
 <body>
     <div class="container">
         <header>
-            <h1>Submit</h1>
-            <!-- include: partials/submit-subtitle.html -->
+            <h1>Anime Lighthouse Index</h1>
+            <!-- include: partials/public-submit-subtitle.html -->
             <div class="subtitle-bar">
               <div class="subtitle">
-                <span id="view-sighting" class="view-link"><a class="view-anchor" href="/submit">Sighting</a></span>
-                •
-                <span id="view-lighthouse" class="view-link"><a class="view-anchor" href="/submitl">Lighthouse</a></span>
-                |
                 <span class="view-link"><a class="view-anchor" href="/">Home</a></span>
               </div>
-
-              <button id="loginBtn">Login</button>
             </div>
-            <p id="submitAdminNotice" class="submit-auth-notice" hidden>
-              Only administrators may submit. Please sign in with an authorized account to continue.
-            </p>
             <!-- /include -->
-            <form id="lighthouseForm">
+            <p class="hint">Submit a lighthouse spotted in an anime or manga. Submissions are reviewed before appearing on the site.</p>
+
+            <form id="publicSubmitForm" novalidate>
+                <div class="section honeypot-field" aria-hidden="true">
+                    <label for="company_website">Company website</label>
+                    <input id="company_website" name="company_website" type="text" tabindex="-1" autocomplete="off" />
+                </div>
 
                 <div class="section">
                     <div class="field">
-                        <label>Date spotted *</label>
-                        <input name="date_spotted" type="date" required />
+                        <label for="image_url">Image URL</label>
+                        <input
+                            id="image_url"
+                            name="image_url"
+                            type="text"
+                            inputmode="url"
+                            placeholder="E.g. https://litter.catbox.moe/..."
+                        />
                     </div>
                 </div>
 
                 <div class="section">
                     <div class="field">
-                        <div class="label-row">
-                            <label>Image</label>
-                            <div class="label-toggle" role="group" aria-label="Image source">
-                                <button type="button" id="imageSourceUploadBtn" class="label-toggle-btn is-active">Upload</button>
-                                <button type="button" id="imageSourceUrlBtn" class="label-toggle-btn">URL</button>
-                            </div>
-                        </div>
-                        <img id="imagePreview" class="image-preview" alt="Selected image preview" hidden />
-                        <div id="imageUploadRow" class="image-input-row">
-                            <input
-                                name="image_file"
-                                id="imageFileInput"
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp"
-                            />
-                            <button type="button" id="traceMoeFetchBtn" disabled>trace.moe</button>
-                        </div>
-                        <div id="imageUrlRow" class="anilist-row" hidden>
-                            <input id="imageUrlInput" type="url" inputmode="url" placeholder="https://…" />
-                            <button type="button" id="traceMoeFetchBtnUrl" disabled>trace.moe</button>
-                        </div>
-                        <div id="traceMoeMatch" class="trace-match" hidden>
-                            <img id="traceMoeThumb" alt="trace.moe matched frame" />
-                            <div id="traceMoeMeta" class="trace-meta"></div>
-                        </div>
-                        <div class="trace-row">
-                            <span id="traceMoeStatus" class="trace-status" aria-live="polite"></span>
-                            <button type="button" id="traceMoeInsertBtn" hidden>Insert</button>
-                            <button type="button" id="traceMoeClearBtn" hidden>Clear</button>
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <div class="anilist-row">
-                            <input id="sauceNaoApiKeyInput" autocomplete="off" spellcheck="false" placeholder="SauceNAO API key" />
-                            <button type="button" id="sauceNaoFetchBtn" disabled>SauceNAO</button>
-                        </div>
-                        <div id="sauceNaoMatch" class="trace-match" hidden>
-                            <img id="sauceNaoThumb" alt="SauceNAO matched frame" />
-                            <div id="sauceNaoMeta" class="trace-meta"></div>
-                        </div>
-                        <div class="trace-row">
-                            <span id="sauceNaoStatus" class="trace-status" aria-live="polite"></span>
-                            <button type="button" id="sauceNaoInsertBtn" hidden>Insert</button>
-                            <button type="button" id="sauceNaoClearBtn" hidden>Clear</button>
-                        </div>
+                        <label for="anilist_link">AniList media URL</label>
+                        <input
+                            id="anilist_link"
+                            name="anilist_link"
+                            type="text"
+                            inputmode="url"
+                            placeholder="E.g. https://anilist.co/anime/104459/"
+                        />
                     </div>
                 </div>
 
                 <div class="section">
                     <div class="field">
-                        <label>AniList link</label>
-
-                        <div class="anilist-row">
-                            <input name="anilist_link" id="anilistInput" type="url" />
-                            <button type="button" id="anilistFetchBtn">Fetch</button>
-                        </div>
+                        <label for="notes">Notes (optional)</label>
+                        <textarea
+                            id="notes"
+                            name="notes"
+                            rows="4"
+                            placeholder="Please provide any additional details, e.g. episode number, timestamp, lighthouse name."
+                        ></textarea>
                     </div>
                 </div>
 
                 <div class="section">
                     <div class="field">
-                        <label>English title</label>
-                        <input name="title_en" required />
-                    </div>
-
-                    <div class="field">
-                        <label>Romaji title</label>
-                        <input name="title_r" required />
-                    </div>
-
-                    <div class="field">
-                        <label>Japanese title</label>
-                        <input name="title_jp" />
-                    </div>
-                </div>
-
-                <div class="section">
-                    <div class="field">
-                        <label>Episode</label>
-                        <input name="episode" />
-                    </div>
-
-                    <div class="field">
-                        <label>Timestamp</label>
-                        <input name="timestamp" />
-                    </div>
-                </div>
-
-                <div class="section">
-                    <div class="field checkbox-field">
-                        <label>
-                            <input type="checkbox" id="isReal">
-                            Real?
-                        </label>
-                    </div>
-                </div>
-
-                <div id="lighthouseSection">
-                    <div class="field">
-                        <label>Lighthouse</label>
-                        <select name="lighthouse_id" id="lighthouseSelect">
-                            <option value="">-- Select lighthouse --</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="section">
-                    <div class="field">
-                        <label>Notes</label>
-                        <p class="hint">Links: [visible text](https://...)</p>
-                        <div class="field">
-                            <textarea name="notes"></textarea>
-                        </div>
+                        <label for="username">Your username (optional)</label>
+                        <input id="username" name="username" type="text" maxlength="80" autocomplete="nickname" />
                     </div>
                 </div>
 
                 <div class="btn-row">
-                    <button type="submit">Add Sighting</button>
+                    <button type="submit" id="submitBtn">Send submission</button>
                 </div>
 
                 <div id="result" class="result"></div>
-
             </form>
+        </header>
     </div>
-    <script type="module" src="/js/pages/submit/sighting.js"></script>
+
+    <footer class="site-footer" aria-label="Site preferences">
+        <div class="container site-footer-inner">
+            <div class="site-footer-controls">
+                <!-- include: partials/footer-theme-row.html -->
+                <div class="site-footer-theme-row">
+                  <span class="site-footer-label" id="light-theme-label">Light theme</span>
+                  <button
+                    type="button"
+                    id="theme-light-toggle"
+                    class="theme-switch-btn"
+                    role="switch"
+                    aria-checked="false"
+                    aria-labelledby="light-theme-label">
+                    <span class="theme-switch-track" aria-hidden="true">
+                      <span class="theme-switch-thumb"></span>
+                    </span>
+                  </button>
+                </div>
+                <!-- /include -->
+                <span class="site-footer-title-lang site-footer-spacer" aria-hidden="true"></span>
+            </div>
+            <!-- include: partials/footer-links.html -->
+            <div class="site-footer-links-wrap">
+              <nav class="site-footer-links" aria-label="Site links">
+                <a href="/">Home</a>
+                <a href="/about">About</a>
+                <a href="/submit">Submit</a>
+                <a href="/admin">Admin</a>
+              </nav>
+            </div>
+            <!-- /include -->
+        </div>
+    </footer>
+
+    <script type="module" src="/js/pages/public-submit.js"></script>
 </body>
 
 </html>

@@ -354,3 +354,20 @@ button {
   color: var(--text-muted);
   opacity: 0.7;
 }
+
+.honeypot-field {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.review-submitter-url {
+  word-break: break-all;
+}
+
+#approveBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

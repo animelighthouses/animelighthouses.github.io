@@ -19,14 +19,16 @@ Maintenance: bump numbers or wording here when UX or integrations change.
 - /list → list.html (compact list rows)
 - /about → about.html
 - /sighting → sighting.html (single shared sighting; ?id= numeric sightings.id)
-- /submit → submit.html (authenticated sighting insert)
+- /submit → submit.html (public submission; no OAuth; Edge Function queue insert)
+- /submit-admin → submit-admin.html (authenticated sighting insert)
+- /review → review.html (authenticated moderation of public queue)
 - /submitl → submitl.html (authenticated lighthouse insert)
 - /submiti → submiti.html (authenticated image reorder/upload for existing sightings; not in tab strip)
 - /admin → admin.html (maintainer hub; OAuth login + links to submit tools)
 - /edit → edit.html (authenticated sighting metadata update; not in tab strip)
 
 Shared chrome behaviour is implemented in js/nav.js (Recent vs List, submit subtabs).
-Footer site links (partials/footer-links.html) include Home, About, and Admin.
+Footer site links (partials/footer-links.html) include Home, About, Submit, and Admin.
 
 
 2. Data backend (Supabase)
@@ -123,7 +125,7 @@ security boundary is server policy, not UI state.
   shape changes.
 
 
-7. Submit — sighting (submit.html)
+7. Submit — sighting (submit-admin.html)
 
 - Auth: GitHub OAuth via Supabase; all controls disabled until session exists; admin-oriented
   copy when logged out; RLS is authoritative.
@@ -184,21 +186,39 @@ Same auth pattern. Fields for names, links, prefecture (full Japan list), notes.
 prefecture auto-select when pasting a lighthouse-japan.com URL whose path matches a label.
 
 
-9. Submit — images (submiti.html)
+9. Public submit (submit.html)
+
+- No OAuth. Single basic form: image URL and/or AniList media URL (at least one required;
+  AniList must be anilist.co/anime/… or anilist.co/manga/…), notes, optional username, honeypot.
+- Chrome: subtitle bar (Home), site footer (light-theme toggle + footer links). No staff login link.
+- POST via Edge Function public-submit-sighting (verify_jwt false): honeypot, rate limit per ip_hash,
+  optional silent AniList enrichment in enrichment jsonb.
+- Footer link Submit between About and Admin.
+
+10. Review submissions (review.html)
+
+- OAuth like other admin tools. Layout like edit.html: submission dropdown, then form.
+- Basic queue rows: submitter image URL (link + preview, never published), AniList, notes with
+  Thanks {username}! prefilled when username present; advanced rows also prefill metadata fields.
+- Maintainer must upload an image (Storage WebP) before Approve; submitter URL used only for
+  trace.moe / SauceNAO lookup (Submitter URL toggle). Approve calls approve_sighting_submission RPC.
+- Reject deletes queue row.
+
+11. Submit — images (submiti.html)
 
 Pick sighting (newest-first list). Reorder, mark delete, upload more with same resize/WebP
 pipeline. Save updates image_link and removes Storage objects for deleted URLs.
 
 
-10. Admin hub (admin.html)
+12. Admin hub (admin.html)
 
 - OAuth via submitAuth.js (login/logout; notice when logged out). Hub link list is hidden
   until a session exists; each tool page still gates writes.
-- Links: Add sighting (/submit), Add lighthouse (/submitl), Edit images (/submiti),
-  Edit sighting (/edit). Placeholder line for future public-submission moderation (#6).
+- Links: Add sighting (/submit-admin), Add lighthouse (/submitl), Edit images (/submiti),
+  Edit sighting (/edit), Review submissions (/review).
 
 
-11. Edit sighting (edit.html)
+13. Edit sighting (edit.html)
 
 - Same auth pattern as other submit-family pages (form disabled until session).
 - Sighting dropdown (newest first; shared loader in js/pages/sightingSelect.js). Optional
@@ -211,14 +231,14 @@ pipeline. Save updates image_link and removes Storage objects for deleted URLs.
 - Subtitle: Admin, Edit images, Home (admin-subtitle pattern).
 
 
-12. External dependencies (browser)
+14. External dependencies (browser)
 
 - AniList GraphQL, trace.moe search API, SauceNAO (via edge function only from the client).
 - pica@9.0.1 (CDN) for resize before WebP.
 - @supabase/supabase-js v2 from CDN.
 
 
-13. Styling and entrypoints
+15. Styling and entrypoints
 
 - css/main.css everywhere; css/submit.css on submit*, admin.html, and edit.html.
 - Module scripts per page; see file headers in js/ for page-specific behaviour.
@@ -227,7 +247,7 @@ pipeline. Save updates image_link and removes Storage objects for deleted URLs.
   the script before committing.
 
 
-14. Module map (maintainer index)
+16. Module map (maintainer index)
 
 Page entries:
 - js/main.js — Recent controller (index.html).
@@ -235,8 +255,13 @@ Page entries:
 - js/pages/about.js — theme switch on About only (about.html).
 - js/pages/view-sighting.js — shared sighting page (sighting.html).
 - js/pages/admin.js — admin hub (admin.html).
+- js/pages/public-submit.js — public submit (submit.html).
+- js/pages/review-submission.js — moderation (review.html).
 - js/pages/edit-sighting.js — sighting metadata editor (edit.html).
-- js/pages/submit/sighting.js — sighting submit orchestrator (submit.html).
+- js/pages/submit/sighting.js — sighting submit orchestrator (submit-admin.html).
+- js/pages/submissionSelect.js — queue dropdown loader (review).
+- js/pages/submissionNotes.js — notesWithThanks helper.
+- js/pages/sightingFormPayload.js — buildSightingPayloadFromForm.
 - js/pages/submit-lighthouse.js — lighthouse submit (submitl.html).
 - js/pages/submit-image.js — image editor for existing rows (submiti.html).
 

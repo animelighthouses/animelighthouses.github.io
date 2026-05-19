@@ -19,18 +19,6 @@ Reflect browse page index in the URL (e.g. ?page=2 for page 2; page 0 omits quer
 sharing and browser back/forward alignment with paging.
 
 
-6. Public submission pipeline
-
-Separate table for unsolicited rows; moderation UI to approve into sightings or reject.
-Likely rename current admin submit path for clarity (e.g. submitadmin vs public submit).
-Spam controls, optional rate limiting, separate Storage bucket for unauthenticated uploads,
-optional email on new queue rows. Footer entry points (Submit / Admin) if adopted.
-- General flow: user enters data -> separate table to hold new submissions -> admin page to review rows (adjust fields to match main lighthouse table; admin review page matches main admin submission form but partially prefilled from submitted data) -> admin approves and row is sent to main sightings table and deleted from separate public table.
-- Idea: basic/advance toggle for basic form (image upload, anilist media link, notes (free text), username (free text)) and advance form (full admin-style submission page).
-- Automatically add to notes field: "Thanks <username>!" if username is provided.
-- Possible hidden api integrations on simple form (run silently, log results in the table without user being aware).
-
-
 7. Contact / feedback form
 
 Lightweight public message table (text; optional name/contact). Anti-abuse measures; email

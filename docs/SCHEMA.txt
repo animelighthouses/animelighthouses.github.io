@@ -51,6 +51,29 @@ Columns:
 Enums:
   sighting_type: real | fictional | unidentified
   media_type:    anime | manga | other
+  submission_form_mode: basic | advanced
+
+---
+
+public.sighting_submissions
+---------------------------
+- RLS: enabled
+- Primary key: id (bigint, identity)
+- Queue for anonymous public submissions; not world-readable
+
+Columns (headlines):
+  id, created_at, form_mode, username, image_url (nullable if AniList-only), anilist_link, notes,
+  optional advanced metadata (date_spotted, titles, episode, timestamp, lighthouse_*,
+  media_id, media_type), enrichment jsonb, ip_hash (rate limiting; not exposed to UI)
+
+Policies:
+  - SELECT / DELETE: authenticated maintainer only (same auth.uid() as sightings writes)
+  - INSERT: not granted to anon/authenticated (Edge Function public-submit-sighting uses service role)
+
+RPC:
+  - approve_sighting_submission(submission_id, sighting jsonb) — maintainer only;
+    requires non-empty image_link array (Storage URL from review upload); inserts sightings,
+    deletes queue row; returns new sightings.id
 
 ---
 

@@ -18,12 +18,29 @@ const ANILIST_GRAPHQL_ENDPOINT = "https://graphql.anilist.co";
  */
 export function parseAniListUrl(url) {
   try {
-    const match = url.match(/anilist\.co\/(anime|manga)\/(\d+)/);
+    const match = String(url ?? "")
+      .trim()
+      .match(/(?:https?:\/\/)?(?:www\.)?anilist\.co\/(anime|manga)\/(\d+)\/?/i);
     if (!match) return null;
-    return { type: /** @type {"anime"|"manga"} */ (match[1]), id: match[2] };
+    return {
+      type: /** @type {"anime"|"manga"} */ (match[1].toLowerCase()),
+      id: match[2],
+    };
   } catch {
     return null;
   }
+}
+
+/**
+ * Canonical https AniList media URL, or null if not parseable.
+ *
+ * @param {string} url
+ * @returns {string | null}
+ */
+export function canonicalAniListUrl(url) {
+  const parsed = parseAniListUrl(url);
+  if (!parsed) return null;
+  return `https://anilist.co/${parsed.type}/${parsed.id}`;
 }
 
 /**

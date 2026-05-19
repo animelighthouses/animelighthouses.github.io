@@ -4,7 +4,7 @@
  *
  * Exports:
  * - initViewNav — Recent vs List (paths `/` and `/list`)
- * - initSubmitNav — Sighting vs Lighthouse (`/submit` vs `/submitl`)
+ * - initSubmitNav — Sighting vs Lighthouse (`/submit-admin` vs `/submitl`)
  */
 
 export function initViewNav() {
@@ -29,7 +29,8 @@ export function initSubmitNav() {
 
   const path = (window.location.pathname || "").toLowerCase();
   const isLighthouse = path.includes("submitl");
+  const isAdminSighting = path.includes("submit-admin");
 
-  viewSighting.classList.toggle("active", !isLighthouse);
+  viewSighting.classList.toggle("active", isAdminSighting && !isLighthouse);
   viewLighthouse.classList.toggle("active", isLighthouse);
 }
