@@ -1,0 +1,22 @@
+Supabase ops (maintainer)
+=========================
+
+Secrets (Dashboard → Project Settings → Edge Functions → Secrets)
+-----------------------------------------------------------------
+DISCORD_WEBHOOK_URL
+  Full Discord channel webhook URL for notify-new-submission. Never commit to git.
+  Rotate in Discord if the URL is exposed.
+
+SITE_BASE_URL (optional)
+  Default https://animelighthouses.github.io — used in Discord review links.
+
+Database webhook: new public submission
+---------------------------------------
+Dashboard → Database → Webhooks → Create:
+
+  Table:   public.sighting_submissions
+  Events:  Insert
+  Target:  Edge Function notify-new-submission
+
+Set DISCORD_WEBHOOK_URL before testing. Submit via /submit to verify one Discord message
+per row with link /review?id=<submission_id>.

@@ -467,6 +467,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     resetSauceUi();
   }
 
+  function selectSubmissionById(id) {
+    if (!submissionSelect) return;
+    const key = String(id ?? "").trim();
+    if (!rowById.has(key)) return;
+    submissionSelect.value = key;
+    submissionSelect.dispatchEvent(new Event("change"));
+  }
+
   submissionSelect?.addEventListener("change", async () => {
     clearResult(resultDiv);
     const id = String(submissionSelect.value || "");
@@ -574,6 +582,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (submissionSelect) {
     const { rowById: loaded } = await loadSubmissionsForSelect({ selectEl: submissionSelect });
     rowById = loaded;
+    const idParam = new URLSearchParams(location.search).get("id");
+    if (idParam) selectSubmissionById(idParam);
   }
 
   updateTypeUI();

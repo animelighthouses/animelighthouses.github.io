@@ -70,6 +70,8 @@ Policies:
   - SELECT / DELETE: authenticated maintainer only (same auth.uid() as sightings writes)
   - INSERT: not granted to anon/authenticated (Edge Function public-submit-sighting uses service role)
 
+Ops: Database Webhook on INSERT → edge function notify-new-submission (Discord). See docs/SUPABASE_OPS.txt.
+
 RPC:
   - approve_sighting_submission(submission_id, sighting jsonb) — maintainer only;
     requires non-empty image_link array (Storage URL from review upload); inserts sightings,

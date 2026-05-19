@@ -198,6 +198,7 @@ prefecture auto-select when pasting a lighthouse-japan.com URL whose path matche
 10. Review submissions (review.html)
 
 - OAuth like other admin tools. Layout like edit.html: submission dropdown, then form.
+- Optional ?id= query (sighting_submissions.id) pre-selects a queue row after load (same as edit).
 - Full metadata form (same fields as submit-admin): date, AniList + Fetch, titles, episode,
   timestamp, real lighthouse, notes. Titles prefilled from queue enrichment or AniList Fetch;
   episode/timestamp via trace.moe / SauceNAO on uploaded image or submitter URL.
@@ -205,6 +206,8 @@ prefecture auto-select when pasting a lighthouse-japan.com URL whose path matche
 - Maintainer must upload an image (Storage WebP) before Approve; submitter URL used only for
   trace.moe / SauceNAO lookup (Submitter URL toggle). Approve calls approve_sighting_submission RPC.
 - Reject deletes queue row.
+- New queue INSERT triggers notify-new-submission (Database Webhook) → Discord alert with
+  /review?id= link. Webhook URL in Supabase secrets only (see docs/SUPABASE_OPS.txt).
 
 11. Submit — images (submiti.html)
 

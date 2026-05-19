@@ -52,6 +52,7 @@ Module dependency graph
   list.html          -> js/index.js               -> dataservice + browse/* + nav + preferences
   about.html         -> js/pages/about.js         -> browse/controls (theme switch only)
   submit.html        -> js/pages/public-submit.js -> supabase.functions public-submit-sighting
+                         DB Webhook (INSERT sighting_submissions) -> notify-new-submission -> Discord
   submit-admin.html  -> js/pages/submit/sighting  -> submit/* + imageProcessing + aniListClient
                                                   + formUtils + submitAuth + nav
   submitl.html       -> js/pages/submit-lighthouse-> formUtils + submitAuth + nav
@@ -62,6 +63,13 @@ Module dependency graph
                                                   + formUtils + submitAuth + sightingSelect
   review.html        -> js/pages/review-submission.js -> submit/* + imageProcessing
                                                   + submissionSelect + sightingFormPayload + RPC
+                                                  (?id= pre-selects queue row)
+
+Edge functions (Supabase)
+-------------------------
+  public-submit-sighting  Anonymous queue insert (verify_jwt false; honeypot + rate limit)
+  notify-new-submission   Database Webhook on sighting_submissions INSERT → Discord (verify_jwt false)
+  saucenao-proxy          Authenticated SauceNAO proxy for submit-family pages
 
 Browse-state contract
 ---------------------
