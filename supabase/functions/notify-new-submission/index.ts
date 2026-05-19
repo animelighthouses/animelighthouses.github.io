@@ -51,6 +51,24 @@ function buildDiscordContent(record: Record<string, unknown>) {
   return lines.join("\n").slice(0, 1900);
 }
 
+/** Discord user id for @tdbn — required for webhook pings (plain @username does not notify). */
+function mentionPrefix() {
+  const userId = Deno.env.get("DISCORD_NOTIFY_USER_ID")?.trim();
+  if (userId && /^\d{5,}$/.test(userId)) return `<@${userId}> `;
+  return "@tdbn ";
+}
+
+function discordWebhookBody(content: string) {
+  const userId = Deno.env.get("DISCORD_NOTIFY_USER_ID")?.trim();
+  const body: { content: string; allowed_mentions?: { users: string[] } } = {
+    content: mentionPrefix() + content,
+  };
+  if (userId && /^\d{5,}$/.test(userId)) {
+    body.allowed_mentions = { users: [userId] };
+  }
+  return body;
+}
+
 async function postDiscord(content: string) {
   const webhookUrl = Deno.env.get("DISCORD_WEBHOOK_URL")?.trim();
   if (!webhookUrl) {
@@ -60,7 +78,7 @@ async function postDiscord(content: string) {
   const res = await fetch(webhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content }),
+    body: JSON.stringify(discordWebhookBody(content)),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");

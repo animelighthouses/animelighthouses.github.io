@@ -7,6 +7,11 @@ DISCORD_WEBHOOK_URL
   Full Discord channel webhook URL for notify-new-submission. Never commit to git.
   Rotate in Discord if the URL is exposed.
 
+DISCORD_NOTIFY_USER_ID (required for @ push on mobile)
+  Your numeric Discord user id (Developer Mode → right-click your name → Copy User ID).
+  The bot prepends <@id> and sets allowed_mentions so webhook messages actually ping you.
+  Plain @<username> in webhook text does not trigger notifications.
+
 SITE_BASE_URL (optional)
   Default https://animelighthouses.github.io — used in Discord review links.
 
