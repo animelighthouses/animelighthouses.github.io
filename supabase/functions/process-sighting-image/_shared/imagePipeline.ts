@@ -1,9 +1,14 @@
 /**
  * Server-side decode, resize (≤1920), WebP encode, and Storage upload.
- * Uses ImageScript (WASM-free, Deno Edge compatible).
+ * Uses @imagemagick/magick-wasm (Supabase Edge–compatible).
  */
 
-import { Image } from "https://deno.land/x/imagescript@1.3.0/mod.ts";
+import {
+  FilterType,
+  ImageMagick,
+  initializeImageMagick,
+  MagickFormat,
+} from "npm:@imagemagick/magick-wasm@0.0.34";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   FETCH_TIMEOUT_MS,
@@ -14,6 +19,14 @@ import {
   WEBP_QUALITY_JPEG,
   WEBP_QUALITY_PNG,
 } from "./constants.ts";
+
+const wasmBytes = await Deno.readFile(
+  new URL(
+    "magick.wasm",
+    import.meta.resolve("npm:@imagemagick/magick-wasm@0.0.34"),
+  ),
+);
+await initializeImageMagick(wasmBytes);
 
 export function shortIdHex8(): string {
   const bytes = new Uint8Array(4);
@@ -115,7 +128,6 @@ export async function assertSafeImageUrl(raw: string): Promise<URL> {
       }
     } catch (e) {
       if (e instanceof Error && e.message.includes("not allowed")) throw e;
-      // DNS failure: allow fetch to fail naturally for unknown hosts
     }
   }
 
@@ -162,34 +174,43 @@ function sourceLooksPng(bytes: Uint8Array): boolean {
 }
 
 /**
- * Decode, fit within max dimensions, encode WebP.
+ * Decode, fit within max dimensions (Lanczos), encode WebP.
  */
 export async function bytesToWebp(
   input: Uint8Array,
   { preferPngQuality = false }: { preferPngQuality?: boolean } = {},
 ): Promise<{ bytes: Uint8Array; width: number; height: number }> {
-  const image = await Image.decode(input);
-  if (!image.width || !image.height) throw new Error("Invalid image.");
-
-  const scale = Math.min(
-    1,
-    MAX_IMAGE_WIDTH / image.width,
-    MAX_IMAGE_HEIGHT / image.height,
-  );
-  const dstW = Math.max(1, Math.round(image.width * scale));
-  const dstH = Math.max(1, Math.round(image.height * scale));
-  const resized =
-    scale < 1 ? image.resize(dstW, dstH) : image;
-
   const quality = preferPngQuality || sourceLooksPng(input)
     ? WEBP_QUALITY_PNG
     : WEBP_QUALITY_JPEG;
-  const bytes = await resized.encodeWEBP(quality);
-  if (!bytes?.length || !isWebpBytes(bytes)) {
+
+  let outW = 0;
+  let outH = 0;
+
+  const outBytes = ImageMagick.read(input, (img): Uint8Array => {
+    const w = img.width;
+    const h = img.height;
+    if (!w || !h) throw new Error("Invalid image.");
+
+    const scale = Math.min(1, MAX_IMAGE_WIDTH / w, MAX_IMAGE_HEIGHT / h);
+    const dstW = Math.max(1, Math.round(w * scale));
+    const dstH = Math.max(1, Math.round(h * scale));
+
+    if (dstW !== w || dstH !== h) {
+      img.resize(dstW, dstH, FilterType.Lanczos);
+    }
+
+    img.quality = quality;
+    outW = img.width;
+    outH = img.height;
+    return img.write(MagickFormat.WebP, (data) => data);
+  });
+
+  if (!outBytes?.length || !isWebpBytes(outBytes)) {
     throw new Error("WebP encoding failed.");
   }
 
-  return { bytes, width: resized.width, height: resized.height };
+  return { bytes: outBytes, width: outW, height: outH };
 }
 
 export async function uploadWebp(

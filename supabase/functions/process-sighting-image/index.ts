@@ -8,7 +8,7 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { MAINTAINER_UID, STORAGE_BUCKET } from "../_shared/constants.ts";
+import { MAINTAINER_UID, STORAGE_BUCKET } from "./_shared/constants.ts";
 import {
   assertSafeImageUrl,
   assertYmd,
@@ -17,7 +17,7 @@ import {
   fetchImageBytes,
   shortIdHex8,
   uploadWebp,
-} from "../_shared/imagePipeline.ts";
+} from "./_shared/imagePipeline.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",

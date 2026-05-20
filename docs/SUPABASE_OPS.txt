@@ -27,7 +27,8 @@ Deploy (either method):
   supabase functions deploy process-sighting-image
 
   Or Supabase MCP: deploy_edge_function (name process-sighting-image, verify_jwt true).
-  Bundler requires ImageScript from deno.land/x, not jsr: (see imagePipeline.ts).
+  WebP pipeline: npm:@imagemagick/magick-wasm@0.0.34 + magick.wasm via import.meta.resolve
+  (see supabase/functions/process-sighting-image/_shared/imagePipeline.ts).
 
 Config: supabase/config.toml sets verify_jwt = true for this function (maintainer
 session required for file/URL upload modes).
@@ -38,7 +39,8 @@ Modes:
   - JSON POST: { reprocess: true, objectPath } + x-reprocess-secret (batch tool; upsert in place)
 
 Limits: Edge has ~256MB RAM and short CPU time per request. Client pre-resizes files
-to ≤1920px before upload. URL fetches are capped at 12MB.
+to ≤1920px before upload. URL fetches are capped at 12MB. WebP encode uses
+@imagemagick/magick-wasm@0.0.34 (same pattern as Supabase image-manipulation example).
 
 iOS Safari: browsers do not encode WebP from canvas; all WebP encoding is server-side.
 
