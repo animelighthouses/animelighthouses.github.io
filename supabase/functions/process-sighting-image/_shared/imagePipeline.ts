@@ -58,6 +58,11 @@ export function assertYmd(ymd: string): string {
   return s;
 }
 
+/** magick-wasm write() returns native memory freed after the callback — copy it. */
+function copyMagickBytes(data: Uint8Array): Uint8Array {
+  return new Uint8Array(data);
+}
+
 export function isWebpBytes(bytes: Uint8Array): boolean {
   if (bytes.length < 12) return false;
   const riff =
@@ -201,9 +206,10 @@ export async function bytesToWebp(
     }
 
     img.quality = quality;
+    img.format = MagickFormat.WebP;
     outW = img.width;
     outH = img.height;
-    return img.write(MagickFormat.WebP, (data) => data);
+    return img.write(MagickFormat.WebP, (data) => copyMagickBytes(data));
   });
 
   if (!outBytes?.length || !isWebpBytes(outBytes)) {
