@@ -17,8 +17,8 @@ import {
   STORAGE_BUCKET,
   assertImageFile,
   parsePublicUrlToObjectPath,
-  processImageToWebp,
-  shortIdHex8
+  resizeImageForUpload,
+  uploadSightingsImageViaEdge
 } from "../imageProcessing.js";
 import { clearResult, setResult } from "./formUtils.js";
 import { loadSightingsForSelect, normalizeYmd } from "./sightingSelect.js";
@@ -260,26 +260,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
         for (const f of pendingFiles) {
-          const processed = await processImageToWebp(f);
-          const shortId = shortIdHex8();
-          const objectPath = mediaId
-            ? `sightings/${ymd}_${mediaId}_${shortId}.webp`
-            : `sightings/${ymd}_${shortId}.webp`;
-
-          const { error: uploadError } = await supabaseClient.storage
-            .from(STORAGE_BUCKET)
-            .upload(objectPath, processed.blob, {
-              contentType: "image/webp",
-              upsert: false
-            });
-          if (uploadError) throw uploadError;
-
-          const { data: publicData } = supabaseClient.storage
-            .from(STORAGE_BUCKET)
-            .getPublicUrl(objectPath);
-
-          const publicUrl = publicData?.publicUrl;
-          if (!publicUrl) throw new Error("Failed to generate public URL.");
+          const resized = await resizeImageForUpload(f);
+          const { publicUrl } = await uploadSightingsImageViaEdge({
+            blob: resized.blob,
+            ymd,
+            mediaId: mediaId || null
+          });
           editedUrls.push(publicUrl);
         }
 

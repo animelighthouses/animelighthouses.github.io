@@ -1,0 +1,13 @@
+# Edge Function JWT verification (see https://supabase.com/docs/guides/functions/function-configuration)
+
+[functions.process-sighting-image]
+verify_jwt = true
+
+[functions.public-submit-sighting]
+verify_jwt = false
+
+[functions.notify-new-submission]
+verify_jwt = false
+
+[functions.saucenao-proxy]
+verify_jwt = false

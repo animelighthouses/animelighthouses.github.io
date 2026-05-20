@@ -129,16 +129,17 @@ security boundary is server policy, not UI state.
 
 - Auth: GitHub OAuth via Supabase; all controls disabled until session exists; admin-oriented
   copy when logged out; RLS is authoritative.
-- Image source: label toggle Upload vs URL. URL mode is lookup-only for trace.moe and SauceNAO;
-  final insert still requires a local file for the image pipeline (see ENHANCEMENTS for
-  possible URL-only path).
+- Image source: label toggle Upload vs URL. Upload mode: client resize (pica, ≤1920) then Edge
+  WebP upload. URL mode: trace.moe/SauceNAO lookups plus full insert via Edge (fetch URL,
+  server resize + WebP); no local file required.
 - Fields (current vertical order): date_spotted (default today), image file + trace.moe control
   row, URL row for lookups, SauceNAO key + button row, AniList URL + Fetch, EN and romaji
   titles (required in form), optional JP title, optional episode/timestamp, Real? + lighthouse
   select when real, notes.
-- Upload pipeline: input cap MAX_IMAGE_BYTES (12 MB); pica resize capped at 1920×1920;
-  Web encode to WebP; path pattern sightings/<date>[_<anilist-media-id>]_<random8>.webp;
-  at most one new image per insert (multi-image via submiti).
+- Upload pipeline: input cap MAX_IMAGE_BYTES (12 MB); client pica resize capped at 1920×1920;
+  process-sighting-image Edge Function encodes WebP and uploads; path pattern
+  sightings/<date>[_<anilist-media-id>]_<random8>.webp; at most one new image per insert
+  (multi-image via submiti).
 - Nulls: empty strings become null where applicable; lighthouse_type/id from Real checkbox.
 
 7.1 trace.moe (submit)
@@ -202,17 +203,19 @@ prefecture auto-select when pasting a lighthouse-japan.com URL whose path matche
 - Full metadata form (same fields as submit-admin): date, AniList + Fetch, titles, episode,
   timestamp, real lighthouse, notes. Titles prefilled from queue enrichment or AniList Fetch;
   episode/timestamp via trace.moe / SauceNAO on uploaded image or submitter URL.
-- Submitter image URL (link + preview, never published); notes include Thanks {username}! when set.
-- Maintainer must upload an image (Storage WebP) before Approve; submitter URL used only for
-  trace.moe / SauceNAO lookup (Submitter URL toggle). Approve calls approve_sighting_submission RPC.
+- Submitter image URL (link + preview); notes include Thanks {username}! when set.
+- Approve image: upload a replacement file (client resize + Edge WebP), or approve using
+  submitter external URL (Edge fetch/resize/WebP at approve time), or approve when queue row
+  already holds a sightings-images Storage URL. Approve calls approve_sighting_submission RPC.
 - Reject deletes queue row.
 - New queue INSERT triggers notify-new-submission (Database Webhook) → Discord alert with
   /review?id= link. Webhook URL in Supabase secrets only (see docs/SUPABASE_OPS.txt).
 
 11. Submit — images (submiti.html)
 
-Pick sighting (newest-first list). Reorder, mark delete, upload more with same resize/WebP
-pipeline. Save updates image_link and removes Storage objects for deleted URLs.
+Pick sighting (newest-first list). Reorder, mark delete, upload more with client resize +
+process-sighting-image Edge upload. Save updates image_link and removes Storage objects for
+deleted URLs.
 
 
 12. Admin hub (admin.html)
@@ -285,7 +288,8 @@ Submit layer (consumed by submit/sighting.js):
 - js/pages/submit/sauceNao.js — endpoint, thresholds, query, est_time parser, key storage.
 
 Cross-cutting helpers:
-- js/imageProcessing.js — STORAGE_BUCKET, validation, pica resize + WebP encode, public URL parser.
+- js/imageProcessing.js — STORAGE_BUCKET, validation, client pica resize, Edge upload helpers,
+  public URL parser.
 - js/pages/formUtils.js — nullifyEmptyStrings, setResult, clearResult.
 - js/pages/aniListClient.js — parseAniListUrl, fetchAniListById, applyAniListMediaToBlankTitles, acceptAniListId, createMediaCache.
 - js/pages/submitAuth.js — shared OAuth gating for submit and admin flows.

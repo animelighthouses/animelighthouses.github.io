@@ -70,6 +70,8 @@ Edge functions (Supabase)
   public-submit-sighting  Anonymous queue insert (verify_jwt false; honeypot + rate limit)
   notify-new-submission   Database Webhook on sighting_submissions INSERT → Discord (verify_jwt false)
   saucenao-proxy          Authenticated SauceNAO proxy for submit-family pages
+  process-sighting-image  Maintainer JWT: client file or sourceUrl → WebP + Storage upload;
+                          reprocess mode (REPROCESS_SECRET) for batch tool
 
 Browse-state contract
 ---------------------

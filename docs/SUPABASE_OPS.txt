@@ -15,6 +15,44 @@ DISCORD_NOTIFY_USER_ID (required for @ push on mobile)
 SITE_BASE_URL (optional)
   Default https://animelighthouses.github.io — used in Discord review links.
 
+REPROCESS_SECRET
+  Random string for batch WebP reprocess only (tools/reprocess-storage-webp.mjs).
+  Sent as header x-reprocess-secret to process-sighting-image reprocess mode.
+  Never commit to git; set the same value locally when running the batch tool.
+
+Edge Function: process-sighting-image
+--------------------------------------
+Deploy (either method):
+
+  supabase functions deploy process-sighting-image
+
+  Or Supabase MCP: deploy_edge_function (name process-sighting-image, verify_jwt true).
+  Bundler requires ImageScript from deno.land/x, not jsr: (see imagePipeline.ts).
+
+Config: supabase/config.toml sets verify_jwt = true for this function (maintainer
+session required for file/URL upload modes).
+
+Modes:
+  - Multipart POST: file + ymd + optional mediaId (browser uploads after client resize)
+  - JSON POST: { sourceUrl, ymd, mediaId? } (admin URL submit, review approve from external URL)
+  - JSON POST: { reprocess: true, objectPath } + x-reprocess-secret (batch tool; upsert in place)
+
+Limits: Edge has ~256MB RAM and short CPU time per request. Client pre-resizes files
+to ≤1920px before upload. URL fetches are capped at 12MB.
+
+iOS Safari: browsers do not encode WebP from canvas; all WebP encoding is server-side.
+
+Batch reprocess (mislabeled PNG-as-.webp)
+-----------------------------------------
+1. npm run backup:images
+2. Set SUPABASE_SERVICE_ROLE_KEY and REPROCESS_SECRET in the environment.
+3. node tools/reprocess-storage-webp.mjs --dry-run
+4. node tools/reprocess-storage-webp.mjs
+
+Report: storage-backup/reprocess-report-YYYY-MM-DD.json
+
+In-place upsert keeps image_link URLs valid; CDN/browser cache may show old bytes briefly.
+
 Database webhook: new public submission
 ---------------------------------------
 Dashboard → Database → Webhooks → Create:

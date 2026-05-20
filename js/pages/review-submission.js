@@ -6,9 +6,10 @@
 import supabaseClient from "../supabaseClient.js";
 import {
   assertImageFile,
-  processImageToWebp,
-  shortIdHex8,
-  STORAGE_BUCKET
+  isSightingsStoragePublicUrl,
+  processSightingsImageFromUrl,
+  resizeImageForUpload,
+  uploadSightingsImageViaEdge
 } from "../imageProcessing.js";
 import {
   acceptAniListId,
@@ -93,8 +94,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   let imageSourceMode = "upload";
   let previewObjectUrl = null;
 
+  function canApproveWithoutNewFile() {
+    if (!selectedRow) return false;
+    const url = String(selectedRow.image_url ?? "").trim();
+    if (!url) return false;
+    return isSightingsStoragePublicUrl(url);
+  }
+
+  function canApproveWithUrlProcessing() {
+    if (!selectedRow) return false;
+    const url = String(selectedRow.image_url ?? "").trim();
+    if (!url || isSightingsStoragePublicUrl(url)) return false;
+    try {
+      const u = new URL(url);
+      return u.protocol === "http:" || u.protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
+
   function updateApproveEnabled() {
-    if (approveBtn) approveBtn.disabled = !pendingUploadFile;
+    if (!approveBtn) return;
+    approveBtn.disabled = !(
+      pendingUploadFile ||
+      canApproveWithoutNewFile() ||
+      canApproveWithUrlProcessing()
+    );
   }
 
   function updateTypeUI() {
@@ -519,35 +544,50 @@ document.addEventListener("DOMContentLoaded", async () => {
       setResult(resultDiv, { kind: "error", text: "Select a submission first." });
       return;
     }
-    if (!pendingUploadFile) {
-      setResult(resultDiv, { kind: "error", text: "Upload an image before approving." });
+    if (
+      !pendingUploadFile &&
+      !canApproveWithoutNewFile() &&
+      !canApproveWithUrlProcessing()
+    ) {
+      setResult(resultDiv, {
+        kind: "error",
+        text: "Upload an image, or select a submission with a valid image URL."
+      });
       return;
     }
 
     try {
       if (approveBtn) approveBtn.disabled = true;
-      setResult(resultDiv, { kind: "", text: "Uploading image…" });
 
-      const processed = await processImageToWebp(pendingUploadFile);
       const dateVal = form.querySelector('[name="date_spotted"]')?.value;
       const ymd =
         dateVal && String(dateVal).trim()
           ? normalizeYmd(dateVal)
           : new Date().toISOString().slice(0, 10);
-      const shortId = shortIdHex8();
-      const mediaId = String(mediaCache.id ?? "").trim();
-      const objectPath = mediaId
-        ? `sightings/${ymd}_${mediaId}_${shortId}.webp`
-        : `sightings/${ymd}_${shortId}.webp`;
+      const mediaId = String(mediaCache.id ?? "").trim() || null;
 
-      const { error: uploadError } = await supabaseClient.storage
-        .from(STORAGE_BUCKET)
-        .upload(objectPath, processed.blob, { contentType: "image/webp", upsert: false });
-      if (uploadError) throw uploadError;
+      let publicUrl;
 
-      const { data: publicData } = supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(objectPath);
-      const publicUrl = publicData?.publicUrl;
-      if (!publicUrl) throw new Error("Failed to generate public URL.");
+      if (pendingUploadFile) {
+        setResult(resultDiv, { kind: "", text: "Processing and uploading image…" });
+        const resized = await resizeImageForUpload(pendingUploadFile);
+        const uploaded = await uploadSightingsImageViaEdge({
+          blob: resized.blob,
+          ymd,
+          mediaId
+        });
+        publicUrl = uploaded.publicUrl;
+      } else if (canApproveWithoutNewFile()) {
+        publicUrl = String(selectedRow.image_url ?? "").trim();
+      } else {
+        setResult(resultDiv, { kind: "", text: "Processing submitter image from URL…" });
+        const uploaded = await processSightingsImageFromUrl({
+          sourceUrl: String(selectedRow.image_url ?? "").trim(),
+          ymd,
+          mediaId
+        });
+        publicUrl = uploaded.publicUrl;
+      }
 
       const payload = buildSightingPayloadFromForm(form, { isReal, mediaCache });
       if (!payload.date_spotted) payload.date_spotted = ymd;

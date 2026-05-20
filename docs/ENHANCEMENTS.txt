@@ -5,14 +5,6 @@ Items here are not committed product promises — they are ideas and future work
 behaviour is documented in FEATURES.txt; product intent in PRD.txt.
 
 
-1. URL-only image submit (complete URL mode)
-
-Allow insert when only an image URL is provided: e.g. Edge Function to fetch the URL
-server-side, enforce size/type caps, resize/encode WebP, upload to sightings-images, return
-publicUrl for image_link. Prefer verify_jwt and caller JWT so Storage/RLS remain authoritative.
-Client would call the function then run existing insert logic.
-
-
 4. Bookmarkable pagination
 
 Reflect browse page index in the URL (e.g. ?page=2 for page 2; page 0 omits query). Enables

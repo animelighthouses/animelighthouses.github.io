@@ -18,10 +18,10 @@
 import supabaseClient from "../../supabaseClient.js";
 import { initSubmitNav } from "../../nav.js";
 import {
-  STORAGE_BUCKET,
   assertImageFile,
-  processImageToWebp,
-  shortIdHex8
+  processSightingsImageFromUrl,
+  resizeImageForUpload,
+  uploadSightingsImageViaEdge
 } from "../../imageProcessing.js";
 import {
   acceptAniListId,
@@ -572,33 +572,36 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (mediaCache.type) formData.media_type = mediaCache.type;
 
     try {
-      const file = imageFileInput?.files?.[0] ?? null;
-      if (!file) {
-        throw new Error("Please upload an image before submitting.");
-      }
-
       const ymd = dateSpottedInput?.value ?? todayYmd();
-      const shortId = shortIdHex8();
-      const objectPath = mediaCache.id
-        ? `sightings/${ymd}_${mediaCache.id}_${shortId}.webp`
-        : `sightings/${ymd}_${shortId}.webp`;
+      const mediaId = mediaCache.id ? String(mediaCache.id) : null;
+      let publicUrl;
 
-      const processed = await processImageToWebp(file);
-
-      const { error: uploadError } = await supabaseClient.storage
-        .from(STORAGE_BUCKET)
-        .upload(objectPath, processed.blob, {
-          contentType: "image/webp",
-          upsert: false
+      if (imageSourceMode === "url") {
+        const sourceUrl = String(imageUrlInput?.value ?? "").trim();
+        if (!sourceUrl) {
+          throw new Error("Please enter an image URL before submitting.");
+        }
+        setResult(resultDiv, { kind: "", text: "Processing image from URL…" });
+        const uploaded = await processSightingsImageFromUrl({
+          sourceUrl,
+          ymd,
+          mediaId
         });
-      if (uploadError) throw uploadError;
-
-      const { data: publicData } = supabaseClient.storage
-        .from(STORAGE_BUCKET)
-        .getPublicUrl(objectPath);
-
-      const publicUrl = publicData?.publicUrl;
-      if (!publicUrl) throw new Error("Failed to generate public URL.");
+        publicUrl = uploaded.publicUrl;
+      } else {
+        const file = imageFileInput?.files?.[0] ?? null;
+        if (!file) {
+          throw new Error("Please upload an image before submitting.");
+        }
+        setResult(resultDiv, { kind: "", text: "Processing and uploading image…" });
+        const resized = await resizeImageForUpload(file);
+        const uploaded = await uploadSightingsImageViaEdge({
+          blob: resized.blob,
+          ymd,
+          mediaId
+        });
+        publicUrl = uploaded.publicUrl;
+      }
 
       formData.image_link = [publicUrl];
 
