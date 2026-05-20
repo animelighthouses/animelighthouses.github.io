@@ -223,7 +223,6 @@ export async function uploadWebp(
   client: SupabaseClient,
   objectPath: string,
   webpBytes: Uint8Array,
-  { upsert = false }: { upsert?: boolean } = {},
 ): Promise<{ publicUrl: string; objectPath: string }> {
   const path = objectPath.replace(/^\/+/, "");
   if (!path.startsWith("sightings/") || !path.endsWith(".webp")) {
@@ -233,7 +232,7 @@ export async function uploadWebp(
   const { error } = await client.storage.from(STORAGE_BUCKET).upload(
     path,
     webpBytes,
-    { contentType: "image/webp", upsert },
+    { contentType: "image/webp" },
   );
   if (error) throw new Error(error.message);
 

@@ -4,11 +4,10 @@
  * Modes:
  * - Multipart: file + ymd + optional mediaId (maintainer JWT)
  * - JSON: { sourceUrl, ymd, mediaId? } (maintainer JWT)
- * - JSON: { reprocess: true, objectPath } + x-reprocess-secret (service role, upsert)
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { MAINTAINER_UID, STORAGE_BUCKET } from "./_shared/constants.ts";
+import { MAINTAINER_UID } from "./_shared/constants.ts";
 import {
   assertSafeImageUrl,
   assertYmd,
@@ -22,7 +21,7 @@ import {
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-reprocess-secret",
+    "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -57,44 +56,6 @@ async function maintainerClientFromRequest(req: Request) {
   if (error || !user?.id) throw new Error("Not authenticated.");
   if (user.id !== MAINTAINER_UID) throw new Error("Not authorized.");
   return client;
-}
-
-function serviceRoleClient() {
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  if (!key) throw new Error("Server configuration error.");
-  return createClient(supabaseUrl(), key);
-}
-
-function reprocessAuthorized(req: Request): boolean {
-  const secret = Deno.env.get("REPROCESS_SECRET") ?? "";
-  if (!secret) return false;
-  return req.headers.get("x-reprocess-secret") === secret;
-}
-
-async function handleReprocess(body: { objectPath?: string }, req: Request) {
-  if (!reprocessAuthorized(req)) {
-    return json({ error: "Not authorized" }, 403);
-  }
-  const objectPath = String(body?.objectPath ?? "").trim().replace(/^\/+/, "");
-  if (!objectPath.startsWith("sightings/") || !objectPath.endsWith(".webp")) {
-    return json({ error: "Invalid objectPath" }, 400);
-  }
-
-  const admin = serviceRoleClient();
-  const { data, error: dlErr } = await admin.storage
-    .from(STORAGE_BUCKET)
-    .download(objectPath);
-  if (dlErr || !data) {
-    return json({ error: dlErr?.message ?? "Download failed" }, 400);
-  }
-
-  const input = new Uint8Array(await data.arrayBuffer());
-  const { bytes, width, height } = await bytesToWebp(input, {
-    preferPngQuality: true,
-  });
-  const { publicUrl } = await uploadWebp(admin, objectPath, bytes, { upsert: true });
-
-  return json({ publicUrl, objectPath, width, height });
 }
 
 async function handleUrlJson(
@@ -154,11 +115,6 @@ Deno.serve(async (req) => {
 
     if (contentType.includes("application/json")) {
       const body = await req.json().catch(() => ({}));
-
-      if (body?.reprocess === true) {
-        return await handleReprocess(body, req);
-      }
-
       const client = await maintainerClientFromRequest(req);
       return await handleUrlJson(body, client);
     }

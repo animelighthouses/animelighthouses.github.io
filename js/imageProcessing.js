@@ -7,8 +7,6 @@
  * Pica is loaded via a <script> tag on the host HTML page (CDN).
  */
 
-import supabaseClient from "./supabaseClient.js";
-
 /** Public-read Supabase Storage bucket holding sighting WebP images. */
 export const STORAGE_BUCKET = "sightings-images";
 
@@ -185,6 +183,7 @@ function assertEdgeImageResponse(data, error) {
  * @returns {Promise<{ publicUrl: string, objectPath: string, width?: number, height?: number }>}
  */
 export async function uploadSightingsImageViaEdge({ blob, ymd, mediaId }) {
+  const { default: supabaseClient } = await import("./supabaseClient.js");
   const form = new FormData();
   const uploadName = blob.type === "image/png" ? "upload.png" : "upload.jpg";
   form.append("file", blob, uploadName);
@@ -209,6 +208,7 @@ export async function uploadSightingsImageViaEdge({ blob, ymd, mediaId }) {
  * @param {{ sourceUrl: string, ymd: string, mediaId?: string | null }} params
  */
 export async function processSightingsImageFromUrl({ sourceUrl, ymd, mediaId }) {
+  const { default: supabaseClient } = await import("./supabaseClient.js");
   const { data, error } = await supabaseClient.functions.invoke(EDGE_FUNCTION, {
     body: {
       sourceUrl: String(sourceUrl ?? "").trim(),

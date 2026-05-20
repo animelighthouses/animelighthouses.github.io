@@ -5,25 +5,51 @@ Items here are not committed product promises — they are ideas and future work
 behaviour is documented in FEATURES.txt; product intent in PRD.txt.
 
 
-4. Bookmarkable pagination
+1. Lite fallback site (separate repo)
+
+Maintain a second GitHub Pages repo with a stripped-down copy of the site so readers
+still get a usable index if maintainer tooling or luxury integrations break and cannot
+be fixed quickly without support.
+
+Scope for the lite repo:
+- Browse only: Recent, List, About, and optional single-sighting share page.
+- No public submit, review queue, trace.moe, SauceNAO, ImageMagick processing, or
+  other auth-gated maintainer pages.
+- Read path should not depend on live Supabase at runtime: periodic export of sightings
+  (and lighthouse join data as needed) to a committed JSON file that dataservice loads
+  instead of the API. Images continue to use existing public Storage URLs in that JSON.
+- Deploy independently from animelighthouses.github.io so a bad deploy on main does not
+  take down the fallback.
+
+Maintenance model:
+- Freeze lite scope; refresh data via an occasional export script, not by merging every
+  main-branch feature.
+- Cherry-pick or hand-port browse-only fixes when desired; do not port submit/admin
+  complexity unless lite scope is deliberately expanded.
+- One short recovery note for the maintainer (export → commit JSON → push lite repo).
+
+See ARCHITECTURE.txt for which pages and modules belong to browse vs submit layers.
+
+
+2. Bookmarkable pagination
 
 Reflect browse page index in the URL (e.g. ?page=2 for page 2; page 0 omits query). Enables
 sharing and browser back/forward alignment with paging.
 
 
-7. Contact / feedback form
+3. Contact / feedback form
 
 Lightweight public message table (text; optional name/contact). Anti-abuse measures; email
 notifications to maintainer.
 
 
-8. Optional media normalization
+4. Optional media normalization
 
 Dedicated media table keyed by AniList id — fewer repeated fetches; room for richer media
 metadata. Evaluate friction for sightings without AniList linkage (fallback UX).
 
 
-9. Preserve List expansion state when changing footer settings
+5. Preserve List expansion state when changing footer settings
 
 The List view (list.html) has no pagination today; instead, rows can be
 expanded into full sighting cards. Toggling unrelated preferences (theme, title
@@ -34,7 +60,7 @@ clears the `expanded` set first.
 Changing preferences on index.html also reset pagination (returns to page 0). This should not happen, so avoid resetting page position when toggling unrelated preferences on index.html.
 
 
-11. Schema split exploration (separate tables for anime vs manga sightings)
+6. Schema split exploration (separate tables for anime vs manga sightings)
 
 Separate tables to drop media_type ambiguity and optionally use chapter vs episode fields;
 evaluate submit complexity and incomplete-metadata cases.

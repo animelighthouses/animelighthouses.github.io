@@ -5,8 +5,7 @@
   "description": "Static site for the Anime Lighthouse Index. No bundler — package.json exists only to enable the local HTML partial composer.",
   "scripts": {
     "build:html": "node tools/build-html.mjs",
-    "backup:images": "node tools/backup-images-from-db.mjs",
-    "reprocess:webp": "node tools/reprocess-storage-webp.mjs"
+    "backup:images": "node tools/backup-images-from-db.mjs"
   },
   "engines": {
     "node": ">=18"
