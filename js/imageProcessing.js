@@ -25,6 +25,9 @@ export const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 /** Post-resize blob size guard before Edge upload (bytes). */
 export const MAX_EDGE_UPLOAD_BYTES = 8 * 1024 * 1024;
 
+/** JPEG quality for non-PNG sources before Edge WebP encode (0–1). */
+export const CLIENT_JPEG_QUALITY = 0.9;
+
 const EDGE_FUNCTION = "process-sighting-image";
 
 /**
@@ -113,7 +116,7 @@ export function toBlob(canvas, type, quality) {
 }
 
 /**
- * Validate, resize (pica when needed), encode as JPEG for Edge WebP conversion.
+ * Validate, resize (pica when needed), encode as PNG or JPEG for Edge WebP conversion.
  *
  * @param {File} file
  * @param {{maxWidth?: number, maxHeight?: number}} [options]
@@ -154,14 +157,18 @@ export async function resizeImageForUpload(
     dstCtx.drawImage(srcCanvas, 0, 0);
   }
 
-  const jpegBlob = await toBlob(dstCanvas, "image/jpeg", 0.85);
-  if (jpegBlob.size > MAX_EDGE_UPLOAD_BYTES) {
+  const isPng = extFromMime(file.type) === "png";
+  const blob = isPng
+    ? await toBlob(dstCanvas, "image/png")
+    : await toBlob(dstCanvas, "image/jpeg", CLIENT_JPEG_QUALITY);
+
+  if (blob.size > MAX_EDGE_UPLOAD_BYTES) {
     throw new Error(
       "Processed image is still too large for upload. Try a smaller source file."
     );
   }
 
-  return { blob: jpegBlob, width: dstW, height: dstH };
+  return { blob, width: dstW, height: dstH };
 }
 
 /** @param {unknown} data @param {{ message?: string } | null} error */
@@ -179,7 +186,8 @@ function assertEdgeImageResponse(data, error) {
  */
 export async function uploadSightingsImageViaEdge({ blob, ymd, mediaId }) {
   const form = new FormData();
-  form.append("file", blob, "upload.jpg");
+  const uploadName = blob.type === "image/png" ? "upload.png" : "upload.jpg";
+  form.append("file", blob, uploadName);
   form.append("ymd", String(ymd ?? "").trim());
   if (mediaId) form.append("mediaId", String(mediaId).trim());
 

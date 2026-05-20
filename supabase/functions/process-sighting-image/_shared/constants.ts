@@ -9,5 +9,5 @@ export const MAX_IMAGE_HEIGHT = 1920;
 
 export const FETCH_TIMEOUT_MS = 15_000;
 
-export const WEBP_QUALITY_JPEG = 82;
-export const WEBP_QUALITY_PNG = 88;
+export const WEBP_QUALITY_JPEG = 88;
+export const WEBP_QUALITY_PNG = 92;
