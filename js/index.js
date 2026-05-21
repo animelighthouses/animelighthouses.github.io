@@ -85,6 +85,11 @@ function renderIndexView() {
 
     if (!expanded.has(id)) details.classList.add("hidden");
 
+    if (expanded.has(id)) {
+      details.appendChild(buildSightingCard(entry, { titleMode: state.titleMode }));
+      cardBuilt = true;
+    }
+
     title.onclick = () => {
       if (expanded.has(id)) {
         expanded.delete(id);
@@ -143,8 +148,8 @@ async function init() {
   bindFilterPanelToggle();
   bindAppearanceMode();
 
-  const onBrowseStateChange = () => {
-    expanded.clear();
+  const onBrowseStateChange = ({ preserveView = false } = {}) => {
+    if (!preserveView) expanded.clear();
     renderIndexView();
   };
 

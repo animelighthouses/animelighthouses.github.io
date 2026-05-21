@@ -68,8 +68,9 @@ security boundary is server policy, not UI state.
 - Multi-image: card and lightbox share index; circular on-screen prev/next buttons and
   ArrowLeft/ArrowRight; buttons hide at ends; lightbox closes on backdrop/image click or Escape.
 - Re-renders from filter/sort/search/page change close an open lightbox first.
-- Pagination: 10 per page; first/prev/next/last + range label; filter changes reset to page 0;
-  scroll anchors to main content once after page moves.
+- Pagination: 10 per page; first/prev/next/last + range label; filter-panel changes reset to
+  page 0; title mode and page nav position changes keep the current page; scroll anchors to
+  main content once after page moves.
 - Page nav position: footer selector (Top / Bottom / Both), stored in localStorage
   (js/preferences.js).
 - Recent card image area: `.card--recent` applies a full-width 16:10 aspect box (capped with
@@ -87,6 +88,8 @@ security boundary is server policy, not UI state.
   <episode> when episode is non-empty after trim (disambiguates duplicate titles), then optional
   “ (lighthouse name en)” for real sightings; expand toggles the full card as on Recent.
 - First expand builds and caches card DOM per row.
+- Title mode change re-renders row labels and expanded cards without collapsing expanded rows;
+  filter-panel changes still collapse expansions.
 - Toolbar: Collapse All (disabled when nothing expanded), live filtered count.
 
 

@@ -12,12 +12,13 @@ still get a usable index if maintainer tooling or luxury integrations break and 
 be fixed quickly without support.
 
 Scope for the lite repo:
-- Browse only: Recent, List, About, and optional single-sighting share page.
+- Browse only: Recent, List, About.
 - No public submit, review queue, trace.moe, SauceNAO, ImageMagick processing, or
   other auth-gated maintainer pages.
 - Read path should not depend on live Supabase at runtime: periodic export of sightings
   (and lighthouse join data as needed) to a committed JSON file that dataservice loads
-  instead of the API. Images continue to use existing public Storage URLs in that JSON.
+  instead of the API. 
+- Images also exported from Supabase and stored in repo.
 - Deploy independently from animelighthouses.github.io so a bad deploy on main does not
   take down the fallback.
 
@@ -49,18 +50,7 @@ Dedicated media table keyed by AniList id — fewer repeated fetches; room for r
 metadata. Evaluate friction for sightings without AniList linkage (fallback UX).
 
 
-5. Preserve List expansion state when changing footer settings
-
-The List view (list.html) has no pagination today; instead, rows can be
-expanded into full sighting cards. Toggling unrelated preferences (theme, title
-mode) should not collapse the currently expanded rows. Currently every footer
-control change calls back through bindCommonControls -> renderIndexView which
-clears the `expanded` set first.
-
-Changing preferences on index.html also reset pagination (returns to page 0). This should not happen, so avoid resetting page position when toggling unrelated preferences on index.html.
-
-
-6. Schema split exploration (separate tables for anime vs manga sightings)
+5. Schema split exploration (separate tables for anime vs manga sightings)
 
 Separate tables to drop media_type ambiguity and optionally use chapter vs episode fields;
 evaluate submit complexity and incomplete-metadata cases.

@@ -183,7 +183,9 @@ export function bindFilterPanelFooter(state, defaults, onStateChange) {
  * re-render. Missing controls are tolerated (some pages omit nav-position).
  *
  * @param {import("./filters.js").BrowseState} state
- * @param {() => void} onStateChange
+ * @param {(options?: { preserveView?: boolean }) => void} onStateChange
+ *   `preserveView: true` for footer preferences (title mode, page nav) that
+ *   should not reset List expansion or Recent pagination.
  */
 export function bindCommonControls(state, onStateChange) {
   const cleanups = [];
@@ -206,7 +208,7 @@ export function bindCommonControls(state, onStateChange) {
     const onChange = e => {
       state.titleMode = e.target.value;
       persistTitleMode(state.titleMode);
-      onStateChange?.();
+      onStateChange?.({ preserveView: true });
     };
     titleMode.addEventListener("change", onChange);
     cleanups.push(() => titleMode.removeEventListener("change", onChange));
@@ -221,7 +223,7 @@ export function bindCommonControls(state, onStateChange) {
     const onChange = e => {
       state.navPosition = e.target.value;
       persistNavPosition(state.navPosition);
-      onStateChange?.();
+      onStateChange?.({ preserveView: true });
     };
     navPos.addEventListener("change", onChange);
     cleanups.push(() => navPos.removeEventListener("change", onChange));

@@ -26,7 +26,7 @@ import { createImageNavIcon } from "./browse/imageNavIcon.js";
 
 const app = document.getElementById("app");
 
-/** Zero-based page index; reset when filters/search/sort change */
+/** Zero-based page index; reset when filter-panel search/sort/filters change */
 let currentPage = 0;
 const pageSize = 10;
 /** @type {import("./dataservice.js").SightingRow[]} */
@@ -185,8 +185,8 @@ async function init() {
   bindFilterPanelToggle();
   bindAppearanceMode();
 
-  const onBrowseStateChange = () => {
-    currentPage = 0;
+  const onBrowseStateChange = ({ preserveView = false } = {}) => {
+    if (!preserveView) currentPage = 0;
     renderPage();
   };
 
