@@ -8,12 +8,16 @@
 
 /** Full https://…workers.dev URL (no trailing slash). */
 export const IMGUR_PROXY_BASE =
-  "https://anilist-imgur-proxy.animetoudaikou.workers.dev";
+  "https://anilist-imgur-proxy.animetoudaikikou.workers.dev";
 
 /** Must match PROXY_SECRET on the Worker and IMGUR_PROXY_KEY in Supabase. */
 export const IMGUR_PROXY_KEY = "pneS106VLlvWtiXgfOC1aO9Xw8wFoq";
 
 const IMGUR_HOSTS = new Set(["i.imgur.com"]);
+
+/** Imgur direct-image path: /{id} or /{id}.{ext} */
+const IMGUR_PATH_RE =
+  /^\/(?:2F|%2F)?([A-Za-z0-9]{5,12})(\.(?:png|jpe?g|gif|webp|webm|mp4|gifv))?(\?.*)?$/i;
 
 let proxyOrigin = "";
 try {
@@ -42,18 +46,53 @@ export function isImgurImageUrl(url) {
 }
 
 /**
+ * Fix over-encoded or mangled i.imgur.com paths (e.g. /2FKTYSVxc.png → /KTYSVxc.png).
+ * @param {string} url
+ * @returns {string}
+ */
+export function normalizeImgurImageUrl(url) {
+  const s = String(url ?? "").trim();
+  if (!s || isProxiedUrl(s)) return s;
+  try {
+    const u = new URL(s, globalThis.location?.href);
+    if (!IMGUR_HOSTS.has(u.hostname.toLowerCase())) return s;
+
+    let path = u.pathname;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const decoded = decodeURIComponent(path);
+        if (decoded === path) break;
+        path = decoded;
+      } catch {
+        break;
+      }
+    }
+
+    path = path.replace(/\/+/g, "/");
+    const m = path.match(IMGUR_PATH_RE);
+    if (m) {
+      path = `/${m[1]}${m[2] ?? ""}${m[3] ?? ""}`;
+    }
+
+    u.pathname = path;
+    return u.href;
+  } catch {
+    return s;
+  }
+}
+
+/**
  * Rewrite i.imgur.com URLs for browser display; pass through everything else.
  * @param {string} url
  * @returns {string}
  */
 export function toImgurProxyUrl(url) {
-  const s = String(url ?? "").trim();
-  if (!s || isProxiedUrl(s) || !isImgurImageUrl(s)) return s;
+  const s = normalizeImgurImageUrl(url);
+  if (!s || isProxiedUrl(s) || !isImgurImageUrl(s)) return String(url ?? "").trim();
   if (!IMGUR_PROXY_BASE || !IMGUR_PROXY_KEY) return s;
 
-  const absolute = new URL(s, globalThis.location?.href).href;
   const proxy = new URL(IMGUR_PROXY_BASE);
   proxy.searchParams.set("key", IMGUR_PROXY_KEY);
-  proxy.searchParams.set("url", absolute);
+  proxy.searchParams.set("url", s);
   return proxy.href;
 }

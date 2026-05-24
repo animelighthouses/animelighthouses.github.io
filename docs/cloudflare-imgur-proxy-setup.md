@@ -69,8 +69,9 @@ Deploy and note the `*.workers.dev` URL.
 
 ### Browser (`js/imgurProxy.js`)
 
-Set `IMGUR_PROXY_BASE` to your Worker URL and `IMGUR_PROXY_KEY` to the same value as
-`PROXY_SECRET`. These are public in the static site (same tradeoff as a userscript key).
+Set `IMGUR_PROXY_BASE` to your Worker URL (e.g.
+`https://anilist-imgur-proxy.animetoudaikikou.workers.dev`) and `IMGUR_PROXY_KEY`
+to the same value as `PROXY_SECRET`.
 
 ### Supabase Edge secrets
 

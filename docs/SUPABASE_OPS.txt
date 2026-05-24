@@ -16,7 +16,7 @@ SITE_BASE_URL (optional)
   Default https://animelighthouses.github.io — used in Discord review links.
 
 IMGUR_PROXY_BASE (recommended when moderating from the UK)
-  Full https://…workers.dev URL for the Cloudflare Imgur proxy. See
+  e.g. https://anilist-imgur-proxy.animetoudaikikou.workers.dev — see
   docs/cloudflare-imgur-proxy-setup.md.
 
 IMGUR_PROXY_KEY (recommended when moderating from the UK)

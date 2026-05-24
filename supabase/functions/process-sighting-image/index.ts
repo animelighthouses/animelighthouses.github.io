@@ -8,6 +8,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { MAINTAINER_UID } from "./_shared/constants.ts";
+import { normalizeImgurImageUrl } from "./_shared/imgurProxy.ts";
 import {
   assertSafeImageUrl,
   assertYmd,
@@ -67,7 +68,8 @@ async function handleUrlJson(
   const mediaId = String(body?.mediaId ?? "").trim() || undefined;
   if (!sourceUrl) return json({ error: "sourceUrl required" }, 400);
 
-  const safe = await assertSafeImageUrl(sourceUrl);
+  const normalizedSource = normalizeImgurImageUrl(sourceUrl);
+  const safe = await assertSafeImageUrl(normalizedSource);
   const input = await fetchImageBytes(safe);
   const { bytes, width, height } = await bytesToWebp(input);
   const objectPath = buildSightingsObjectPath({
