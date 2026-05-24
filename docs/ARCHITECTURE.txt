@@ -40,6 +40,7 @@ Module layers
                  -> sighting.js orchestrates; the others are unaware of the form
 
   Helpers        js/imageProcessing.js (consumed by sighting.js + submit-image.js)
+                 js/imgurProxy.js (i.imgur.com → Cloudflare Worker for browser previews)
                  js/pages/formUtils.js (consumed by all submit pages)
                  js/pages/aniListClient.js (consumed by sighting.js)
                  js/pages/submitAuth.js (consumed by submit + admin pages)
@@ -71,6 +72,7 @@ Edge functions (Supabase)
   notify-new-submission   Database Webhook on sighting_submissions INSERT → Discord (verify_jwt false)
   saucenao-proxy          Authenticated SauceNAO proxy for submit-family pages
   process-sighting-image  Maintainer JWT: client file or sourceUrl → WebP + Storage upload
+                          (i.imgur.com sourceUrl fetched via IMGUR_PROXY_* Worker)
 
 Browse-state contract
 ---------------------

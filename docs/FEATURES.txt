@@ -134,7 +134,9 @@ security boundary is server policy, not UI state.
   copy when logged out; RLS is authoritative.
 - Image source: label toggle Upload vs URL. Upload mode: client resize (pica, ≤1920) then Edge
   WebP upload. URL mode: trace.moe/SauceNAO lookups plus full insert via Edge (fetch URL,
-  server resize + WebP); no local file required.
+  server resize + WebP); no local file required. i.imgur.com previews and Edge URL fetch use
+  the Cloudflare Imgur proxy (js/imgurProxy.js + Edge secrets; see
+  docs/cloudflare-imgur-proxy-setup.md).
 - Fields (current vertical order): date_spotted (default today), image file + trace.moe control
   row, URL row for lookups, SauceNAO key + button row, AniList URL + Fetch, EN and romaji
   titles (required in form), optional JP title, optional episode/timestamp, Real? + lighthouse
@@ -206,9 +208,10 @@ prefecture auto-select when pasting a lighthouse-japan.com URL whose path matche
 - Full metadata form (same fields as submit-admin): date, AniList + Fetch, titles, episode,
   timestamp, real lighthouse, notes. Titles prefilled from queue enrichment or AniList Fetch;
   episode/timestamp via trace.moe / SauceNAO on uploaded image or submitter URL.
-- Submitter image URL (link + preview); notes include Thanks {username}! when set.
+- Submitter image URL (link + preview); Imgur CDN URLs preview via Cloudflare proxy when
+  geo-blocked. Notes include Thanks {username}! when set.
 - Approve image: upload a replacement file (client resize + Edge WebP), or approve using
-  submitter external URL (Edge fetch/resize/WebP at approve time), or approve when queue row
+  submitter external URL (Edge fetch/resize/WebP at approve time; Imgur via proxy), or approve when queue row
   already holds a sightings-images Storage URL. Approve calls approve_sighting_submission RPC.
 - Reject deletes queue row.
 - New queue INSERT triggers notify-new-submission (Database Webhook) → Discord alert with
@@ -291,6 +294,7 @@ Submit layer (consumed by submit/sighting.js):
 - js/pages/submit/sauceNao.js — endpoint, thresholds, query, est_time parser, key storage.
 
 Cross-cutting helpers:
+- js/imgurProxy.js — i.imgur.com detection + Cloudflare Worker URL rewrite for browser previews.
 - js/imageProcessing.js — STORAGE_BUCKET, validation, client pica resize, Edge upload helpers,
   public URL parser.
 - js/pages/formUtils.js — nullifyEmptyStrings, setResult, clearResult.

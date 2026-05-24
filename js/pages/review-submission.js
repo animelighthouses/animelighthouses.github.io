@@ -11,6 +11,7 @@ import {
   resizeImageForUpload,
   uploadSightingsImageViaEdge
 } from "../imageProcessing.js";
+import { toImgurProxyUrl } from "../imgurProxy.js";
 import {
   acceptAniListId,
   createMediaCache,
@@ -430,7 +431,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     if (submitterImagePreview) {
       if (url) {
-        submitterImagePreview.src = url;
+        submitterImagePreview.src = toImgurProxyUrl(url);
         submitterImagePreview.removeAttribute("hidden");
       } else {
         submitterImagePreview.setAttribute("hidden", "");

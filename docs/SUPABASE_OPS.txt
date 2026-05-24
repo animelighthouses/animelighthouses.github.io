@@ -15,6 +15,15 @@ DISCORD_NOTIFY_USER_ID (required for @ push on mobile)
 SITE_BASE_URL (optional)
   Default https://animelighthouses.github.io — used in Discord review links.
 
+IMGUR_PROXY_BASE (recommended when moderating from the UK)
+  Full https://…workers.dev URL for the Cloudflare Imgur proxy. See
+  docs/cloudflare-imgur-proxy-setup.md.
+
+IMGUR_PROXY_KEY (recommended when moderating from the UK)
+  Same secret as PROXY_SECRET on the Worker and IMGUR_PROXY_KEY in js/imgurProxy.js.
+  Used by process-sighting-image when fetching i.imgur.com sourceUrl (avoids UK
+  geo-block placeholders in Storage).
+
 Edge Function: process-sighting-image
 --------------------------------------
 Deploy (either method):
@@ -31,6 +40,10 @@ session required for file/URL upload modes).
 Modes:
   - Multipart POST: file + ymd + optional mediaId (browser uploads after client resize)
   - JSON POST: { sourceUrl, ymd, mediaId? } (admin URL submit, review approve from external URL)
+
+Imgur: when sourceUrl is i.imgur.com, the function fetches via IMGUR_PROXY_* (Cloudflare
+Worker, US egress) instead of direct Imgur. Browser previews use the same worker via
+js/imgurProxy.js. Setup: docs/cloudflare-imgur-proxy-setup.md.
 
 Limits: Edge has ~256MB RAM and short CPU time per request. Client pre-resizes files
 to ≤1920px before upload. URL fetches are capped at 12MB. WebP encode uses
