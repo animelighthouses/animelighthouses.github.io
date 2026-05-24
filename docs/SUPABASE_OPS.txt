@@ -16,9 +16,8 @@ SITE_BASE_URL (optional)
   Default https://animelighthouses.github.io — used in Discord review links.
 
 IMGUR_PROXY_BASE (optional override)
-  Defaults to the same worker URL as js/imgurProxy.js if unset. Override with
-  e.g. https://anilist-imgur-proxy.animetoudaikikou.workers.dev — see
-  docs/cloudflare-imgur-proxy-setup.md.
+  Auto-corrects the common …animetoudaikou… typo to …animetoudaikikou….
+  Defaults to the same worker URL as js/imgurProxy.js if unset.
 
 IMGUR_PROXY_KEY (optional override)
   Defaults to the same key as js/imgurProxy.js if unset. Override to rotate

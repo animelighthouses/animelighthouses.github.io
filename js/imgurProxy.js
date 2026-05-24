@@ -7,17 +7,22 @@
  */
 
 /** Full https://…workers.dev URL (no trailing slash). */
-export const IMGUR_PROXY_BASE =
-  "https://anilist-imgur-proxy.animetoudaikikou.workers.dev";
+export const IMGUR_PROXY_BASE = fixImgurProxyBase(
+  "https://anilist-imgur-proxy.animetoudaikikou.workers.dev",
+);
 
 /** Must match PROXY_SECRET on the Worker and IMGUR_PROXY_KEY in Supabase. */
 export const IMGUR_PROXY_KEY = "pneS106VLlvWtiXgfOC1aO9Xw8wFoq";
 
 const IMGUR_HOSTS = new Set(["i.imgur.com"]);
 
-/** Imgur direct-image path: /{id} or /{id}.{ext} */
-const IMGUR_PATH_RE =
-  /^\/(?:2F|%2F)?([A-Za-z0-9]{5,12})(\.(?:png|jpe?g|gif|webp|webm|mp4|gifv))?(\?.*)?$/i;
+/** Corrects a known typo in worker hostnames (…daikou → …daikikou). */
+export function fixImgurProxyBase(base) {
+  return String(base ?? "").replace(
+    "anilist-imgur-proxy.animetoudaikou.workers.dev",
+    "anilist-imgur-proxy.animetoudaikikou.workers.dev",
+  );
+}
 
 let proxyOrigin = "";
 try {
@@ -60,6 +65,23 @@ export function isImgurImageUrl(url) {
   }
 }
 
+function normalizeImgurPathname(pathname) {
+  let path = String(pathname ?? "");
+  for (let i = 0; i < 3; i++) {
+    try {
+      const decoded = decodeURIComponent(path);
+      if (decoded === path) break;
+      path = decoded;
+    } catch {
+      break;
+    }
+  }
+  path = path.replace(/\/+/g, "/");
+  // Partial URL decode sometimes leaves a literal "2F" where "/" was encoded.
+  path = path.replace(/^\/2F(?=[A-Za-z0-9])/i, "/");
+  return path;
+}
+
 /**
  * Fix over-encoded or mangled i.imgur.com paths (e.g. /2FKTYSVxc.png → /KTYSVxc.png).
  * @param {string} url
@@ -72,24 +94,7 @@ export function normalizeImgurImageUrl(url) {
     const u = new URL(s, globalThis.location?.href);
     if (!IMGUR_HOSTS.has(u.hostname.toLowerCase())) return s;
 
-    let path = u.pathname;
-    for (let i = 0; i < 3; i++) {
-      try {
-        const decoded = decodeURIComponent(path);
-        if (decoded === path) break;
-        path = decoded;
-      } catch {
-        break;
-      }
-    }
-
-    path = path.replace(/\/+/g, "/");
-    const m = path.match(IMGUR_PATH_RE);
-    if (m) {
-      path = `/${m[1]}${m[2] ?? ""}${m[3] ?? ""}`;
-    }
-
-    u.pathname = path;
+    u.pathname = normalizeImgurPathname(u.pathname);
     return u.href;
   } catch {
     return s;
