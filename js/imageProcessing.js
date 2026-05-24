@@ -7,6 +7,8 @@
  * Pica is loaded via a <script> tag on the host HTML page (CDN).
  */
 
+import { normalizeImgurImageUrl } from "./imgurProxy.js";
+
 /** Public-read Supabase Storage bucket holding sighting WebP images. */
 export const STORAGE_BUCKET = "sightings-images";
 
@@ -169,10 +171,21 @@ export async function resizeImageForUpload(
   return { blob, width: dstW, height: dstH };
 }
 
-/** @param {unknown} data @param {{ message?: string } | null} error */
-function assertEdgeImageResponse(data, error) {
-  if (error) throw error;
+/** @param {unknown} data @param {{ message?: string, context?: Response } | null} error */
+async function assertEdgeImageResponse(data, error) {
   if (data?.error) throw new Error(String(data.error));
+  if (error) {
+    let msg = String(error.message ?? error);
+    if (error.context && typeof error.context.json === "function") {
+      try {
+        const body = await error.context.json();
+        if (body?.error) msg = String(body.error);
+      } catch {
+        // ignore
+      }
+    }
+    throw new Error(msg);
+  }
   if (!data?.publicUrl) throw new Error("Image processing failed.");
 }
 
@@ -193,7 +206,7 @@ export async function uploadSightingsImageViaEdge({ blob, ymd, mediaId }) {
   const { data, error } = await supabaseClient.functions.invoke(EDGE_FUNCTION, {
     body: form
   });
-  assertEdgeImageResponse(data, error);
+  await assertEdgeImageResponse(data, error);
   return {
     publicUrl: data.publicUrl,
     objectPath: data.objectPath,
@@ -211,12 +224,12 @@ export async function processSightingsImageFromUrl({ sourceUrl, ymd, mediaId }) 
   const { default: supabaseClient } = await import("./supabaseClient.js");
   const { data, error } = await supabaseClient.functions.invoke(EDGE_FUNCTION, {
     body: {
-      sourceUrl: String(sourceUrl ?? "").trim(),
+      sourceUrl: normalizeImgurImageUrl(String(sourceUrl ?? "").trim()),
       ymd: String(ymd ?? "").trim(),
       mediaId: mediaId ? String(mediaId).trim() : undefined
     }
   });
-  assertEdgeImageResponse(data, error);
+  await assertEdgeImageResponse(data, error);
   return {
     publicUrl: data.publicUrl,
     objectPath: data.objectPath,

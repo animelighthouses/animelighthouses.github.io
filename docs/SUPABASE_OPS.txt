@@ -15,14 +15,14 @@ DISCORD_NOTIFY_USER_ID (required for @ push on mobile)
 SITE_BASE_URL (optional)
   Default https://animelighthouses.github.io — used in Discord review links.
 
-IMGUR_PROXY_BASE (recommended when moderating from the UK)
+IMGUR_PROXY_BASE (optional override)
+  Defaults to the same worker URL as js/imgurProxy.js if unset. Override with
   e.g. https://anilist-imgur-proxy.animetoudaikikou.workers.dev — see
   docs/cloudflare-imgur-proxy-setup.md.
 
-IMGUR_PROXY_KEY (recommended when moderating from the UK)
-  Same secret as PROXY_SECRET on the Worker and IMGUR_PROXY_KEY in js/imgurProxy.js.
-  Used by process-sighting-image when fetching i.imgur.com sourceUrl (avoids UK
-  geo-block placeholders in Storage).
+IMGUR_PROXY_KEY (optional override)
+  Defaults to the same key as js/imgurProxy.js if unset. Override to rotate
+  PROXY_SECRET on the Worker without redeploying the Edge Function.
 
 Edge Function: process-sighting-image
 --------------------------------------
