@@ -56,3 +56,20 @@ Separate tables to drop media_type ambiguity and optionally use chapter vs episo
 evaluate submit complexity and incomplete-metadata cases.
 
 - Cons: submit button becomes more complex; relies on AniList url to determine which table it needs to be added to; would need to add media type dropdown to submit form for when anilist link isnt available (possibly fallback general url).
+
+
+6. Line breaks in notes field
+
+Allow submitters and maintainers to enter multi-line notes (paragraphs, lists) and have
+those breaks preserved on sighting cards and detail views.
+
+Current behaviour: textarea inputs accept newlines, but browse rendering
+(js/browse/noteText.js) inserts plain text nodes — HTML collapses `\n` to a single space,
+so cards show one long line unless CSS changes are added.
+
+Possible approach:
+- Render `\n` as `<br>` or use `white-space: pre-wrap` on `.notes` text (watch link parsing
+  in noteText.js still works across line boundaries).
+- Confirm public submit, review prefill, and edit save round-trip newlines unchanged in
+  Postgres text columns.
+- Decide whether single line breaks only, or also blank-line paragraph spacing.
