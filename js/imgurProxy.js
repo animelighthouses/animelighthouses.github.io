@@ -35,6 +35,21 @@ function isProxiedUrl(url) {
   }
 }
 
+function unwrapImgurProxyUrl(url) {
+  const s = String(url ?? "").trim();
+  if (!s) return s;
+  try {
+    const u = new URL(s, globalThis.location?.href);
+    if (u.hostname.endsWith(".workers.dev") && u.searchParams.has("url")) {
+      const inner = u.searchParams.get("url");
+      if (inner) return inner;
+    }
+  } catch {
+    // ignore
+  }
+  return s;
+}
+
 /** True for direct i.imgur.com image URLs (not api.imgur.com). */
 export function isImgurImageUrl(url) {
   try {
@@ -51,7 +66,7 @@ export function isImgurImageUrl(url) {
  * @returns {string}
  */
 export function normalizeImgurImageUrl(url) {
-  const s = String(url ?? "").trim();
+  const s = unwrapImgurProxyUrl(String(url ?? "").trim());
   if (!s || isProxiedUrl(s)) return s;
   try {
     const u = new URL(s, globalThis.location?.href);
@@ -95,4 +110,17 @@ export function toImgurProxyUrl(url) {
   proxy.searchParams.set("key", IMGUR_PROXY_KEY);
   proxy.searchParams.set("url", s);
   return proxy.href;
+}
+
+/**
+ * URL to pass to trace.moe / SauceNAO in URL mode — Imgur hosts use the
+ * Cloudflare worker so upstream fetchers are not geo-blocked.
+ * @param {string} url
+ * @returns {string}
+ */
+export function resolveLookupImageUrl(url) {
+  const normalized = normalizeImgurImageUrl(url);
+  if (!normalized) return "";
+  if (isImgurImageUrl(normalized)) return toImgurProxyUrl(normalized);
+  return normalized;
 }

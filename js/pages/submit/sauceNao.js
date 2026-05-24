@@ -15,6 +15,7 @@
  */
 
 import supabaseClient from "../../supabaseClient.js";
+import { resolveLookupImageUrl } from "../../imgurProxy.js";
 
 /** Anime* index: yields `part` (episode) + `est_time` (timestamp/duration) when available. */
 const SAUCENAO_DB_ANIME = 21;
@@ -71,8 +72,10 @@ export async function querySauceNao(source) {
   };
 
   if (source.kind === "url") {
+    const lookupUrl = resolveLookupImageUrl(String(source.url ?? "").trim());
+    if (!lookupUrl) throw new Error("Please enter an image URL.");
     const { data, error } = await supabaseClient.functions.invoke("saucenao-proxy", {
-      body: { ...payload, url: source.url }
+      body: { ...payload, url: lookupUrl }
     });
     if (error) throw error;
     return data;

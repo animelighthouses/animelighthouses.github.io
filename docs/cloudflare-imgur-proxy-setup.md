@@ -12,8 +12,8 @@ Worker with **US placement**. The same worker is used in two places:
 | Browser | `js/imgurProxy.js` | Preview Imgur URLs on review, submit-admin, edit |
 | Edge | `IMGUR_PROXY_*` secrets on `process-sighting-image` | Fetch + WebP ingest at approve/submit URL mode |
 
-Original Imgur URLs are still stored in the submission queue and passed to trace.moe /
-SauceNAO unchanged; only display and Storage ingestion use the proxy.
+Original Imgur URLs are still stored in the submission queue. Display, Storage ingestion,
+and trace.moe / SauceNAO URL-mode lookups use the proxy for `i.imgur.com` only.
 
 ## 1. Create the Worker
 

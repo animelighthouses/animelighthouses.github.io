@@ -10,6 +10,8 @@
  * Episode formatter exposed here is reused by sauceNao.js for visual parity.
  */
 
+import { resolveLookupImageUrl } from "../../imgurProxy.js";
+
 const TRACE_MOE_ENDPOINT = "https://api.trace.moe/search?anilistInfo=1&cutBorders";
 
 /** Three-tier thresholds; tweak if matches feel too permissive or too strict. */
@@ -47,7 +49,7 @@ export async function queryTraceMoe(source) {
   let url;
   let init;
   if (source.kind === "url") {
-    const u = String(source.url ?? "").trim();
+    const u = resolveLookupImageUrl(String(source.url ?? "").trim());
     if (!u) throw new Error("Please enter an image URL.");
     url = `${TRACE_MOE_ENDPOINT}&url=${encodeURIComponent(u)}`;
   } else {
