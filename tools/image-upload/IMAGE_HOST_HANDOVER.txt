@@ -1,0 +1,209 @@
+Image host handover (website repo)
+=================================
+
+Purpose
+-------
+This document explains the boundary between:
+
+1. this website repo (`animelighthouses.github.io`)
+2. the separate image-host backend repo (`personal-image-host`)
+3. Cloudflare account/dashboard work
+
+Use it when deciding where a change should be made.
+
+
+Current integration
+-------------------
+The website repo currently owns the tiny uploader page at:
+
+  /tools/image-upload/
+    index.html
+    app.js
+    styles.css
+
+That page:
+
+- lets the user choose a local image file
+- previews the image
+- offers resize/output options
+- collects the upload token from the user
+- prepares the final blob client-side
+- sends the upload request to:
+
+    https://img.toudai.moe/upload
+
+- receives a public image URL back
+- helps the user copy the result for AniList use
+
+The backend pipeline is already working end-to-end: uploads succeed and the
+returned image URLs are suitable for AniList hotlinking.
+
+
+What this website repo is responsible for
+-----------------------------------------
+This repo owns the client-side part of the upload flow.
+
+That includes:
+
+- uploader page route, layout, and copy
+- file picker / preview UX
+- resize option UX
+- output-format selector UX
+- token input UX
+- client-side validation before upload
+- client-side image preparation / re-encode / resize
+- copy-to-clipboard behavior
+- AniList-specific output helpers (for example copy format choices)
+- mobile/browser-specific UX tweaks
+
+In short:
+
+If the browser is deciding what file/blob gets sent to the backend, the change
+probably belongs here.
+
+
+What can be changed safely in this repo
+---------------------------------------
+These are normal website-repo changes:
+
+- change labels, helper text, status messages, and page structure
+- add drag-and-drop or paste support
+- tweak resize presets
+- tweak client-side conversion rules
+- change the copied AniList helper format
+- improve mobile UX
+- remember user preferences locally
+- add more client-side checks before submission
+
+Examples:
+
+- "Add a 2400px resize option" -> website repo
+- "Default output to JPEG instead of Original" -> website repo
+- "Copy `![](url)` instead of `img420(url)`" -> website repo
+- "Hide WebP on iOS Safari" -> website repo
+
+
+What should NOT be changed only in this repo
+--------------------------------------------
+Do not assume the website repo can change the backend contract on its own.
+
+These backend concerns live in the separate `personal-image-host` repo:
+
+- accepted MIME types on the Worker
+- max upload size enforced by the Worker
+- bearer-token auth rules
+- CORS policy
+- object naming/key format
+- R2 write/read behavior
+- response JSON shape
+- public URL hostname and path shape
+- cache headers for public reads
+- kill switches and abuse controls
+- notifier/analytics Worker work
+
+Examples:
+
+- "Allow SVG uploads" -> backend repo
+- "Raise max upload size above 25 MB" -> backend repo
+- "Change `/upload` request format" -> backend repo
+- "Change public URLs away from `https://img.toudai.moe/i/...`" -> backend repo
+- "Add Worker-side rate limiting" -> backend repo
+
+
+Current backend contract
+------------------------
+The website repo currently depends on this backend contract:
+
+Upload endpoint:
+
+  POST https://img.toudai.moe/upload
+
+Upload auth:
+
+  Authorization: Bearer <token>
+
+Current allowed origin:
+
+  https://www.toudai.moe
+
+Current file types expected by both sides:
+
+- image/gif
+- image/jpeg
+- image/png
+- image/webp
+
+Current client-side source limit in this repo:
+
+  25 MB
+
+Successful upload response shape:
+
+  {
+    "ok": true,
+    "key": "2026-05-25-a1b2c3d4e5f6.png",
+    "url": "https://img.toudai.moe/i/2026-05-25-a1b2c3d4e5f6.png",
+    "contentType": "image/png",
+    "bytes": 12345
+  }
+
+The uploader should treat `url` as the canonical public image URL.
+
+
+Current page files
+------------------
+The current implementation is in:
+
+- tools/image-upload/index.html
+- tools/image-upload/app.js
+- tools/image-upload/styles.css
+
+If you need to change how the browser prepares the upload payload, start in:
+
+  tools/image-upload/app.js
+
+
+How to decide where a change belongs
+------------------------------------
+Ask:
+
+1. Is this about page UX or browser-side file preparation?
+   -> this website repo
+
+2. Is this about what the Worker accepts, stores, returns, or serves?
+   -> `personal-image-host`
+
+3. Is this about secrets, domains, alerts, buckets, routes, or billing?
+   -> Cloudflare dashboard / backend repo
+
+
+Suggested workflow for future changes
+-------------------------------------
+When changing the uploader flow:
+
+1. update the website repo first if the change is purely client-side
+2. update the backend repo as well if the request/response contract changes
+3. test the full flow at:
+   - https://www.toudai.moe/tools/image-upload/
+   - https://img.toudai.moe/i/<key>
+4. verify the returned URL still works in AniList
+
+
+Quick summary
+-------------
+This website repo owns the upload UI and client-side preprocessing.
+
+The `personal-image-host` repo owns:
+
+- the Worker
+- R2/KV behavior
+- public image serving
+- abuse controls
+- future analytics/notifier work
+
+Cloudflare owns:
+
+- domains
+- bucket privacy
+- alerts/notifications
+- secret storage
