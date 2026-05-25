@@ -1,7 +1,7 @@
 // Supabase Edge Function: saucenao-proxy
 //
 // Purpose: proxy SauceNAO requests to avoid browser CORS restrictions.
-// This function expects an authenticated caller (submit.html is OAuth-gated).
+// Maintainer-only: browser callers must be authenticated.
 //
 // Body (JSON):
 // - apiKey: string (required)
@@ -12,6 +12,10 @@
 // - imageBase64: string (optional; data URL or raw base64)
 //
 // Exactly one of `url` or `imageBase64` must be provided.
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+
+const MAINTAINER_UID = "27518d60-563d-427d-827e-74279a3b3ea5";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -25,6 +29,31 @@ function json(body: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+function supabaseUrl(): string {
+  const u = Deno.env.get("SUPABASE_URL") ?? "";
+  if (!u) throw new Error("Server configuration error.");
+  return u;
+}
+
+function anonKey(): string {
+  const k = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+  if (!k) throw new Error("Server configuration error.");
+  return k;
+}
+
+async function assertMaintainer(req: Request) {
+  const auth = req.headers.get("Authorization") ?? "";
+  if (!auth.startsWith("Bearer ")) {
+    throw new Error("Not authenticated.");
+  }
+  const client = createClient(supabaseUrl(), anonKey(), {
+    global: { headers: { Authorization: auth } },
+  });
+  const { data: { user }, error } = await client.auth.getUser();
+  if (error || !user?.id) throw new Error("Not authenticated.");
+  if (user.id !== MAINTAINER_UID) throw new Error("Not authorized.");
 }
 
 function decodeBase64Image(input: string): Uint8Array {
@@ -44,6 +73,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
+    await assertMaintainer(req);
     const body = await req.json().catch(() => ({}));
     const apiKey = String(body?.apiKey ?? "").trim();
     const db = Number(body?.db ?? 21);
@@ -93,7 +123,11 @@ Deno.serve(async (req) => {
       );
     }
   } catch (e) {
-    return json({ error: String(e?.message ?? e) }, 500);
+    const msg = String(e?.message ?? e);
+    const status = msg.includes("Not authenticated") || msg.includes("Not authorized")
+      ? 401
+      : 500;
+    return json({ error: msg }, status);
   }
 });
 

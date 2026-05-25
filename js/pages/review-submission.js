@@ -11,7 +11,6 @@ import {
   resizeImageForUpload,
   uploadSightingsImageViaEdge
 } from "../imageProcessing.js";
-import { normalizeImgurImageUrl, toImgurProxyUrl } from "../imgurProxy.js";
 import {
   acceptAniListId,
   createMediaCache,
@@ -419,7 +418,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function prefillFromSubmission(row) {
     if (!form || !row) return;
 
-    const url = normalizeImgurImageUrl(String(row.image_url ?? "").trim());
+    const url = String(row.image_url ?? "").trim();
     if (submitterUsername) {
       submitterUsername.textContent = row.username
         ? `Submitted by: ${row.username}`
@@ -431,7 +430,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     if (submitterImagePreview) {
       if (url) {
-        submitterImagePreview.src = toImgurProxyUrl(url);
+        submitterImagePreview.src = url;
         submitterImagePreview.removeAttribute("hidden");
       } else {
         submitterImagePreview.setAttribute("hidden", "");

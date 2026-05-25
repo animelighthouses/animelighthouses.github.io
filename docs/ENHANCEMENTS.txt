@@ -73,3 +73,9 @@ Possible approach:
 - Confirm public submit, review prefill, and edit save round-trip newlines unchanged in
   Postgres text columns.
 - Decide whether single line breaks only, or also blank-line paragraph spacing.
+
+
+7. Optional Imgur proxy for review
+
+Potential future option: proxy Imgur image URLs supplied by public submitters so reviewing
+submissions with Imgur-hosted images is easier in regions where direct Imgur access is blocked.

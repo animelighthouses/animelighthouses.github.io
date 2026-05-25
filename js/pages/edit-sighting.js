@@ -5,7 +5,6 @@
  */
 
 import supabaseClient from "../supabaseClient.js";
-import { toImgurProxyUrl } from "../imgurProxy.js";
 import {
   acceptAniListId,
   createMediaCache,
@@ -119,7 +118,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const url = getStoredImageUrl();
     if (!storedImagePreview) return;
     if (url) {
-      storedImagePreview.src = toImgurProxyUrl(url);
+      storedImagePreview.src = url;
       storedImagePreview.removeAttribute("hidden");
     } else {
       storedImagePreview.setAttribute("hidden", "");

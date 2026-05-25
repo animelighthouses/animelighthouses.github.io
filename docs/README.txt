@@ -14,7 +14,6 @@ update one source of truth.
 | ENHANCEMENTS.txt   | Ideas and backlog — not shipped. |
 | SCHEMA.txt         | Supabase Postgres shape, enums, RLS summary. |
 | SUPABASE_OPS.txt   | Edge Function secrets, deploy, webhooks. |
-| cloudflare-imgur-proxy-setup.md | Cloudflare Worker for UK Imgur geo-block. |
 | README.txt         | This index. |
 
 Suggested reading order for someone new: SITUATION → PRD → FEATURES → ARCHITECTURE

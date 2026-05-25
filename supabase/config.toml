@@ -10,4 +10,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.saucenao-proxy]
-verify_jwt = false
+verify_jwt = true
+
+[functions.mint-imgur-proxy-url]
+verify_jwt = true

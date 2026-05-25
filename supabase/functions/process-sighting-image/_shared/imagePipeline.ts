@@ -19,7 +19,6 @@ import {
   WEBP_QUALITY_JPEG,
   WEBP_QUALITY_PNG,
 } from "./constants.ts";
-import { resolveImgurFetchUrl } from "./imgurProxy.ts";
 
 const wasmBytes = await Deno.readFile(
   new URL(
@@ -140,39 +139,11 @@ export async function assertSafeImageUrl(raw: string): Promise<URL> {
   return u;
 }
 
-function looksLikeImageBytes(bytes: Uint8Array): boolean {
-  if (bytes.length < 12) return false;
-  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return true;
-  if (
-    bytes[0] === 0x89 &&
-    bytes[1] === 0x50 &&
-    bytes[2] === 0x4e &&
-    bytes[3] === 0x47
-  ) {
-    return true;
-  }
-  if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) return true;
-  if (
-    bytes[0] === 0x52 &&
-    bytes[1] === 0x49 &&
-    bytes[2] === 0x46 &&
-    bytes[3] === 0x46 &&
-    bytes[8] === 0x57 &&
-    bytes[9] === 0x45 &&
-    bytes[10] === 0x42 &&
-    bytes[11] === 0x50
-  ) {
-    return true;
-  }
-  return false;
-}
-
 export async function fetchImageBytes(url: URL): Promise<Uint8Array> {
-  const fetchUrl = resolveImgurFetchUrl(url);
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(fetchUrl.toString(), {
+    const res = await fetch(url.toString(), {
       signal: ctrl.signal,
       redirect: "follow",
       headers: { Accept: "image/*,*/*;q=0.8" },
@@ -191,9 +162,6 @@ export async function fetchImageBytes(url: URL): Promise<Uint8Array> {
       );
     }
     if (buf.length < 16) throw new Error("Image data too small.");
-    if (!looksLikeImageBytes(buf)) {
-      throw new Error("URL did not return recognizable image data.");
-    }
     return buf;
   } finally {
     clearTimeout(timer);
