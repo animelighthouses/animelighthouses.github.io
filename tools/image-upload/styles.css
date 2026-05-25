@@ -1,0 +1,99 @@
+.upload-form {
+  display: grid;
+  gap: var(--space-9);
+}
+
+.field-grid {
+  display: grid;
+  gap: var(--space-9);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.field {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.field span {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.helper-text {
+  color: var(--text-muted);
+}
+
+.preview-shell {
+  min-height: 220px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  display: grid;
+  place-items: center;
+  padding: var(--space-9);
+  background: color-mix(in srgb, var(--surface) 88%, var(--bg));
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 420px;
+  border-radius: var(--radius-md);
+}
+
+.hidden {
+  display: none;
+}
+
+.button-row {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+#upload-button,
+.copy-row button {
+  cursor: pointer;
+  padding: 0.7rem 1rem;
+}
+
+.status-box {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 90%, var(--bg));
+}
+
+.status-box[data-state="success"] {
+  border-color: var(--status-success-border);
+  background: var(--status-success-bg);
+  color: var(--status-success-fg);
+}
+
+.status-box[data-state="error"] {
+  border-color: var(--status-danger-border);
+  background: var(--status-danger-bg);
+  color: var(--status-danger-fg);
+}
+
+.copy-row {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+#result-url,
+#result-markdown,
+#token-input,
+#file-input,
+#resize-select,
+#format-select {
+  width: 100%;
+}
+
+#result-markdown {
+  resize: vertical;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}

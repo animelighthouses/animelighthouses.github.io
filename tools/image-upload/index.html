@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Upload | Anime Lighthouse Index</title>
+  <script src="/js/theme-boot.js"></script>
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>Image Upload</h1>
+      <div class="subtitle">
+        <a href="/">Home</a>
+        <span>•</span>
+        <span>Uploads to <code>https://img.toudai.moe</code></span>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="card-header-row">
+        <div>
+          <h2>MVP uploader</h2>
+          <p class="helper-text">Local-file upload only. GIFs stay original. Still images can be resized before upload.</p>
+        </div>
+      </div>
+
+      <form id="upload-form" class="upload-form">
+        <label class="field">
+          <span>Image file</span>
+          <input id="file-input" name="file" type="file" accept="image/gif,image/jpeg,image/png,image/webp" required />
+        </label>
+
+        <div class="field-grid">
+          <label class="field">
+            <span>Resize</span>
+            <select id="resize-select" name="resize">
+              <option value="original">Original size</option>
+              <option value="1920">Fit within 1920px</option>
+              <option value="1600">Fit within 1600px</option>
+              <option value="1200">Fit within 1200px</option>
+              <option value="800">Fit within 800px</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Output</span>
+            <select id="format-select" name="format">
+              <option value="original">Original format</option>
+              <option value="jpeg">JPEG</option>
+              <option value="png">PNG</option>
+              <option value="webp">WebP</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Upload token</span>
+          <input id="token-input" name="token" type="password" autocomplete="off" placeholder="Paste Bearer token" required />
+        </label>
+
+        <div class="preview-shell">
+          <img id="preview-image" class="preview-image hidden" alt="Selected file preview" />
+          <p id="preview-empty" class="helper-text">No file selected yet.</p>
+        </div>
+
+        <div class="button-row">
+          <button id="upload-button" type="submit">Upload image</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Status</h2>
+      <div id="status-box" class="status-box" aria-live="polite">Choose a file to begin.</div>
+    </section>
+
+    <section class="card">
+      <h2>Result</h2>
+
+      <label class="field">
+        <span>Image URL</span>
+        <div class="copy-row">
+          <input id="result-url" type="text" readonly placeholder="Upload result URL" />
+          <button type="button" data-copy-target="result-url">Copy</button>
+        </div>
+      </label>
+
+      <label class="field">
+        <span>Markdown</span>
+        <div class="copy-row">
+          <textarea id="result-markdown" rows="3" readonly placeholder="Markdown image snippet"></textarea>
+          <button type="button" data-copy-target="result-markdown">Copy</button>
+        </div>
+      </label>
+    </section>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+
+</html>
