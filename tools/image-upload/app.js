@@ -91,7 +91,7 @@ uploadForm.addEventListener("submit", async event => {
     }
 
     resultUrl.value = payload.url;
-    resultMarkdown.value = `![](${payload.url})`;
+    resultMarkdown.value = `img420(${payload.url})`;
     setStatus(`Uploaded successfully as ${payload.key}.`, "success");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
