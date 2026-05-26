@@ -30,7 +30,7 @@ That page:
 - prepares the final blob client-side
 - sends the upload request to:
 
-    https://img.toudai.moe/upload
+    https://upload.toudai.moe/upload
 
 - receives a public image URL back
 - helps the user copy the result for AniList use
@@ -116,7 +116,7 @@ The website repo currently depends on this backend contract:
 
 Upload endpoint:
 
-  POST https://img.toudai.moe/upload
+  POST https://upload.toudai.moe/upload
 
 Upload auth:
 
@@ -148,6 +148,7 @@ Successful upload response shape:
   }
 
 The uploader should treat `url` as the canonical public image URL.
+That returned public image URL should still use `https://img.toudai.moe/i/...`.
 
 
 Current page files
@@ -185,6 +186,7 @@ When changing the uploader flow:
 2. update the backend repo as well if the request/response contract changes
 3. test the full flow at:
    - https://www.toudai.moe/tools/image-upload/
+   - POST https://upload.toudai.moe/upload
    - https://img.toudai.moe/i/<key>
 4. verify the returned URL still works in AniList
 

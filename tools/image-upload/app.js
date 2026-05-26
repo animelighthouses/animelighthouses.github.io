@@ -1,4 +1,4 @@
-const UPLOAD_ENDPOINT = "https://img.toudai.moe/upload";
+const UPLOAD_ENDPOINT = "https://upload.toudai.moe/upload";
 const TOKEN_STORAGE_KEY = "toudai-image-upload-token";
 const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
 
