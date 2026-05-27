@@ -1,12 +1,16 @@
+import {
+  handleSubmitAuthButtonClick,
+  setFormEnabledFromSession
+} from "../../js/pages/submitAuth.js";
+
 const UPLOAD_ENDPOINT = "https://upload.toudai.moe/upload";
 const TOKEN_STORAGE_KEY = "toudai-image-upload-token";
 const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
 
 const ALLOWED_EXTENSIONS = new Set(["gif", "jpg", "jpeg", "png", "webp"]);
 const ALLOWED_TYPES = new Set(["image/gif", "image/jpeg", "image/png", "image/webp"]);
-const ACCESS_SIGN_IN_URL = "https://upload.toudai.moe/upload";
-const ACCESS_SIGN_IN_HELP =
-  "Sign in with GitHub first: click “Sign in for upload”, finish login in the new tab, then upload again from this page.";
+const UPLOAD_HOST_SIGN_IN_HELP =
+  "Upload host sign-in required. Finish login in the opened tab, then try again.";
 const MIME_TO_EXTENSION = {
   "image/gif": "gif",
   "image/jpeg": "jpg",
@@ -25,10 +29,30 @@ const uploadButton = document.getElementById("upload-button");
 const statusBox = document.getElementById("status-box");
 const resultUrl = document.getElementById("result-url");
 const resultMarkdown = document.getElementById("result-markdown");
+const loginBtn = document.getElementById("loginBtn");
+const noticeEl = document.getElementById("submitAdminNotice");
 
 let previewObjectUrl = "";
+let uploadHostSignInOpened = false;
 
-tokenInput.value = sessionStorage.getItem(TOKEN_STORAGE_KEY) ?? "";
+tokenInput.value = localStorage.getItem(TOKEN_STORAGE_KEY) ?? "";
+
+document.addEventListener("DOMContentLoaded", async () => {
+  async function refreshAuth() {
+    await setFormEnabledFromSession({
+      form: uploadForm,
+      loginBtn,
+      noticeEl
+    });
+  }
+
+  loginBtn?.addEventListener("click", async () => {
+    await handleSubmitAuthButtonClick({ form: uploadForm, loginBtn, noticeEl });
+    await refreshAuth();
+  });
+
+  await refreshAuth();
+});
 
 fileInput.addEventListener("change", () => {
   const [file] = fileInput.files ?? [];
@@ -39,16 +63,8 @@ fileInput.addEventListener("change", () => {
 });
 
 tokenInput.addEventListener("input", () => {
-  sessionStorage.setItem(TOKEN_STORAGE_KEY, tokenInput.value.trim());
+  localStorage.setItem(TOKEN_STORAGE_KEY, tokenInput.value.trim());
 });
-
-const accessSignInButton = document.getElementById("access-sign-in-button");
-if (accessSignInButton instanceof HTMLButtonElement) {
-  accessSignInButton.addEventListener("click", () => {
-    window.open(ACCESS_SIGN_IN_URL, "_blank", "noopener,noreferrer");
-    setStatus("Complete GitHub sign-in in the new tab, then return here and upload.", "idle");
-  });
-}
 
 uploadForm.addEventListener("submit", async event => {
   event.preventDefault();
@@ -106,7 +122,7 @@ uploadForm.addEventListener("submit", async event => {
         body: formData
       });
     } catch {
-      throw new Error(ACCESS_SIGN_IN_HELP);
+      throw new Error(promptUploadHostSignIn());
     }
 
     const payload = await readJson(response);
@@ -152,10 +168,19 @@ document.addEventListener("click", async event => {
   }
 });
 
+function promptUploadHostSignIn() {
+  if (!uploadHostSignInOpened) {
+    uploadHostSignInOpened = true;
+    window.open(UPLOAD_ENDPOINT, "_blank", "noopener,noreferrer");
+  }
+
+  return UPLOAD_HOST_SIGN_IN_HELP;
+}
+
 async function prepareUploadFile(file, { maxDimension, outputFormat }) {
   if (file.type === "image/gif") {
     if (maxDimension !== "original" || outputFormat !== "original") {
-      throw new Error("GIF uploads stay original in the MVP. Leave resize and output as original.");
+      throw new Error("GIF uploads stay original. Leave resize and output as original.");
     }
     return file;
   }
@@ -262,12 +287,12 @@ function getUploadErrorMessage(response, payload) {
   }
 
   if (response.status === 401 || response.status === 403) {
-    return ACCESS_SIGN_IN_HELP;
+    return promptUploadHostSignIn();
   }
 
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("application/json")) {
-    return ACCESS_SIGN_IN_HELP;
+    return promptUploadHostSignIn();
   }
 
   return "Upload failed.";

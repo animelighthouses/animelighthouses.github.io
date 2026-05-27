@@ -7,26 +7,31 @@
   <title>Image Upload | Anime Lighthouse Index</title>
   <script src="/js/theme-boot.js"></script>
   <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="/css/submit.css" />
   <link rel="stylesheet" href="./styles.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
   <div class="container">
     <header>
       <h1>Image Upload</h1>
-      <div class="subtitle">
-        <a href="/">Home</a>
+      <div class="subtitle-bar">
+        <div class="subtitle">
+          <span class="view-link"><a class="view-anchor" href="/admin">Admin</a></span>
+          |
+          <span class="view-link"><a class="view-anchor" href="/">Home</a></span>
+        </div>
+
+        <button id="loginBtn">Login</button>
       </div>
+      <p id="submitAdminNotice" class="submit-auth-notice" hidden>
+        Only administrators may use this tool. Please sign in with an authorized account to continue.
+      </p>
     </header>
 
     <section class="card">
-      <div class="card-header-row">
-        <div>
-          <h2>MVP uploader</h2>
-          <p class="helper-text">Local-file upload only. GIFs stay original. Still images can be resized before upload.</p>
-        </div>
-      </div>
-
       <form id="upload-form" class="upload-form">
         <label class="field">
           <span>Image file</span>
@@ -58,16 +63,8 @@
 
         <label class="field">
           <span>Upload token</span>
-          <input id="token-input" name="token" placeholder="Paste Bearer token" required />
-          <p class="helper-text">
-            Uploads require a one-time GitHub sign-in for <code>upload.toudai.moe</code> (Cloudflare Access).
-            Use the button below before your first upload.
-          </p>
+          <input id="token-input" name="token" placeholder="Bearer token" required />
         </label>
-
-        <div class="button-row">
-          <button id="access-sign-in-button" type="button">Sign in for upload (GitHub)</button>
-        </div>
 
         <div class="preview-shell">
           <img id="preview-image" class="preview-image hidden" alt="Selected file preview" />
