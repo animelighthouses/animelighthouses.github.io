@@ -5,7 +5,6 @@
  * via js/browse/, and marks the Recent/List tab via nav.js.
  */
 
-import { completeOAuthReturnIfNeeded } from "./pages/submitAuth.js";
 import { fetchSightings } from "./dataservice.js";
 import { readStoredNavPosition, readStoredTitleMode } from "./preferences.js";
 import { initViewNav } from "./nav.js";
@@ -180,7 +179,6 @@ function createPagination(totalItems, { scrollAfter = "top" } = {}) {
 }
 
 async function init() {
-  await completeOAuthReturnIfNeeded();
   initViewNav();
   allData = await fetchSightings();
   populateLighthouseFilter(allData, state);

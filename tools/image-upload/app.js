@@ -4,13 +4,14 @@ import {
 } from "../../js/pages/submitAuth.js";
 
 const UPLOAD_ENDPOINT = "https://upload.toudai.moe/upload";
+const UPLOAD_ORIGIN = "https://upload.toudai.moe";
 const TOKEN_STORAGE_KEY = "toudai-image-upload-token";
 const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
 
 const ALLOWED_EXTENSIONS = new Set(["gif", "jpg", "jpeg", "png", "webp"]);
 const ALLOWED_TYPES = new Set(["image/gif", "image/jpeg", "image/png", "image/webp"]);
 const UPLOAD_HOST_SIGN_IN_HELP =
-  "Upload host sign-in required. Finish login in the opened tab, then try again.";
+  "Upload host sign-in in progress. Wait a moment, then try uploading again.";
 const MIME_TO_EXTENSION = {
   "image/gif": "gif",
   "image/jpeg": "jpg",
@@ -33,17 +34,20 @@ const loginBtn = document.getElementById("loginBtn");
 const noticeEl = document.getElementById("submitAdminNotice");
 
 let previewObjectUrl = "";
-let uploadHostSignInOpened = false;
+let uploadHostAccessPrimeInFlight = false;
 
 tokenInput.value = localStorage.getItem(TOKEN_STORAGE_KEY) ?? "";
 
 document.addEventListener("DOMContentLoaded", async () => {
   async function refreshAuth() {
-    await setFormEnabledFromSession({
+    const hasSession = await setFormEnabledFromSession({
       form: uploadForm,
       loginBtn,
       noticeEl
     });
+    if (hasSession) {
+      primeUploadHostAccess();
+    }
   }
 
   loginBtn?.addEventListener("click", async () => {
@@ -168,12 +172,33 @@ document.addEventListener("click", async event => {
   }
 });
 
-function promptUploadHostSignIn() {
-  if (!uploadHostSignInOpened) {
-    uploadHostSignInOpened = true;
-    window.open(UPLOAD_ENDPOINT, "_blank", "noopener,noreferrer");
+/**
+ * Establish the Cloudflare Access session cookie without opening a visible tab.
+ * GET /upload returns 405 from the Worker; use the hostname root instead.
+ */
+function primeUploadHostAccess() {
+  if (uploadHostAccessPrimeInFlight) {
+    return;
   }
 
+  uploadHostAccessPrimeInFlight = true;
+  const iframe = document.createElement("iframe");
+  iframe.hidden = true;
+  iframe.title = "Upload host sign-in";
+  iframe.src = `${UPLOAD_ORIGIN}/`;
+
+  const cleanup = () => {
+    uploadHostAccessPrimeInFlight = false;
+    iframe.remove();
+  };
+
+  iframe.addEventListener("load", cleanup, { once: true });
+  window.setTimeout(cleanup, 20_000);
+  document.body.appendChild(iframe);
+}
+
+function promptUploadHostSignIn() {
+  primeUploadHostAccess();
   return UPLOAD_HOST_SIGN_IN_HELP;
 }
 
