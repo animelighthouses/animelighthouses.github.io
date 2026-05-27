@@ -60,11 +60,14 @@
           <span>Upload token</span>
           <input id="token-input" name="token" placeholder="Paste Bearer token" required />
           <p class="helper-text">
-            First upload? In Cloudflare Zero Trust, open your Access app for
-            <code>upload.toudai.moe</code> and use <strong>Launch</strong> to sign in with GitHub once, then return here.
-            (A direct visit to <code>upload.toudai.moe</code> may be blocked by WAF if only <code>POST /upload</code> is allowed.)
+            Uploads require a one-time GitHub sign-in for <code>upload.toudai.moe</code> (Cloudflare Access).
+            Use the button below before your first upload.
           </p>
         </label>
+
+        <div class="button-row">
+          <button id="access-sign-in-button" type="button">Sign in for upload (GitHub)</button>
+        </div>
 
         <div class="preview-shell">
           <img id="preview-image" class="preview-image hidden" alt="Selected file preview" />

@@ -4,7 +4,9 @@ const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
 
 const ALLOWED_EXTENSIONS = new Set(["gif", "jpg", "jpeg", "png", "webp"]);
 const ALLOWED_TYPES = new Set(["image/gif", "image/jpeg", "image/png", "image/webp"]);
-const ACCESS_SIGN_IN_URL = "https://upload.toudai.moe/";
+const ACCESS_SIGN_IN_URL = "https://upload.toudai.moe/upload";
+const ACCESS_SIGN_IN_HELP =
+  "Sign in with GitHub first: click “Sign in for upload”, finish login in the new tab, then upload again from this page.";
 const MIME_TO_EXTENSION = {
   "image/gif": "gif",
   "image/jpeg": "jpg",
@@ -39,6 +41,14 @@ fileInput.addEventListener("change", () => {
 tokenInput.addEventListener("input", () => {
   sessionStorage.setItem(TOKEN_STORAGE_KEY, tokenInput.value.trim());
 });
+
+const accessSignInButton = document.getElementById("access-sign-in-button");
+if (accessSignInButton instanceof HTMLButtonElement) {
+  accessSignInButton.addEventListener("click", () => {
+    window.open(ACCESS_SIGN_IN_URL, "_blank", "noopener,noreferrer");
+    setStatus("Complete GitHub sign-in in the new tab, then return here and upload.", "idle");
+  });
+}
 
 uploadForm.addEventListener("submit", async event => {
   event.preventDefault();
@@ -85,14 +95,19 @@ uploadForm.addEventListener("submit", async event => {
     const formData = new FormData();
     formData.append("file", preparedFile, preparedFile.name);
 
-    const response = await fetch(UPLOAD_ENDPOINT, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      body: formData
-    });
+    let response;
+    try {
+      response = await fetch(UPLOAD_ENDPOINT, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: formData
+      });
+    } catch {
+      throw new Error(ACCESS_SIGN_IN_HELP);
+    }
 
     const payload = await readJson(response);
     if (!response.ok || !payload?.ok || typeof payload.url !== "string") {
@@ -247,12 +262,12 @@ function getUploadErrorMessage(response, payload) {
   }
 
   if (response.status === 401 || response.status === 403) {
-    return `Sign in with GitHub at ${ACCESS_SIGN_IN_URL} (open in a new tab), then try again.`;
+    return ACCESS_SIGN_IN_HELP;
   }
 
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("application/json")) {
-    return `Sign in with GitHub at ${ACCESS_SIGN_IN_URL} (open in a new tab), then try again.`;
+    return ACCESS_SIGN_IN_HELP;
   }
 
   return "Upload failed.";
