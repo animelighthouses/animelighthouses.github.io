@@ -4,14 +4,13 @@ import {
 } from "../../js/pages/submitAuth.js";
 
 const UPLOAD_ENDPOINT = "https://upload.toudai.moe/upload";
-const UPLOAD_ORIGIN = "https://upload.toudai.moe";
 const TOKEN_STORAGE_KEY = "toudai-image-upload-token";
 const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
 
 const ALLOWED_EXTENSIONS = new Set(["gif", "jpg", "jpeg", "png", "webp"]);
 const ALLOWED_TYPES = new Set(["image/gif", "image/jpeg", "image/png", "image/webp"]);
 const UPLOAD_HOST_SIGN_IN_HELP =
-  "Upload host sign-in in progress. Wait a moment, then try uploading again.";
+  "Upload host sign-in opened in a new tab. Close it after login (405 is normal), then upload again.";
 const MIME_TO_EXTENSION = {
   "image/gif": "gif",
   "image/jpeg": "jpg",
@@ -34,20 +33,16 @@ const loginBtn = document.getElementById("loginBtn");
 const noticeEl = document.getElementById("submitAdminNotice");
 
 let previewObjectUrl = "";
-let uploadHostAccessPrimeInFlight = false;
 
 tokenInput.value = localStorage.getItem(TOKEN_STORAGE_KEY) ?? "";
 
 document.addEventListener("DOMContentLoaded", async () => {
   async function refreshAuth() {
-    const hasSession = await setFormEnabledFromSession({
+    await setFormEnabledFromSession({
       form: uploadForm,
       loginBtn,
       noticeEl
     });
-    if (hasSession) {
-      primeUploadHostAccess();
-    }
   }
 
   loginBtn?.addEventListener("click", async () => {
@@ -126,7 +121,8 @@ uploadForm.addEventListener("submit", async event => {
         body: formData
       });
     } catch {
-      throw new Error(promptUploadHostSignIn());
+      openUploadHostSignIn();
+      throw new Error(UPLOAD_HOST_SIGN_IN_HELP);
     }
 
     const payload = await readJson(response);
@@ -172,34 +168,8 @@ document.addEventListener("click", async event => {
   }
 });
 
-/**
- * Establish the Cloudflare Access session cookie without opening a visible tab.
- * GET /upload returns 405 from the Worker; use the hostname root instead.
- */
-function primeUploadHostAccess() {
-  if (uploadHostAccessPrimeInFlight) {
-    return;
-  }
-
-  uploadHostAccessPrimeInFlight = true;
-  const iframe = document.createElement("iframe");
-  iframe.hidden = true;
-  iframe.title = "Upload host sign-in";
-  iframe.src = `${UPLOAD_ORIGIN}/`;
-
-  const cleanup = () => {
-    uploadHostAccessPrimeInFlight = false;
-    iframe.remove();
-  };
-
-  iframe.addEventListener("load", cleanup, { once: true });
-  window.setTimeout(cleanup, 20_000);
-  document.body.appendChild(iframe);
-}
-
-function promptUploadHostSignIn() {
-  primeUploadHostAccess();
-  return UPLOAD_HOST_SIGN_IN_HELP;
+function openUploadHostSignIn() {
+  window.open(UPLOAD_ENDPOINT, "_blank", "noopener,noreferrer");
 }
 
 async function prepareUploadFile(file, { maxDimension, outputFormat }) {
@@ -312,12 +282,14 @@ function getUploadErrorMessage(response, payload) {
   }
 
   if (response.status === 401 || response.status === 403) {
-    return promptUploadHostSignIn();
+    openUploadHostSignIn();
+    return UPLOAD_HOST_SIGN_IN_HELP;
   }
 
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("application/json")) {
-    return promptUploadHostSignIn();
+    openUploadHostSignIn();
+    return UPLOAD_HOST_SIGN_IN_HELP;
   }
 
   return "Upload failed.";
