@@ -38,6 +38,14 @@ That page:
 The backend pipeline is already working end-to-end: uploads succeed and the
 returned image URLs are suitable for AniList hotlinking.
 
+For the canonical backend docs (setup, ops, contract), prefer the backend repo:
+
+- `personal-image-host/docs/README.md` (documentation index)
+- `personal-image-host/docs/setup.md`
+- `personal-image-host/docs/status.md`
+- `personal-image-host/docs/operations.md`
+- `personal-image-host/docs/integrations.md` (single source of truth for cross-repo contracts)
+
 
 What this website repo is responsible for
 -----------------------------------------

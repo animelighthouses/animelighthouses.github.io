@@ -2,7 +2,9 @@ const UPLOAD_ENDPOINT = "https://upload.toudai.moe/upload";
 const TOKEN_STORAGE_KEY = "toudai-image-upload-token";
 const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
 
+const ALLOWED_EXTENSIONS = new Set(["gif", "jpg", "jpeg", "png", "webp"]);
 const ALLOWED_TYPES = new Set(["image/gif", "image/jpeg", "image/png", "image/webp"]);
+const ACCESS_SIGN_IN_URL = "https://upload.toudai.moe/";
 const MIME_TO_EXTENSION = {
   "image/gif": "gif",
   "image/jpeg": "jpg",
@@ -52,6 +54,12 @@ uploadForm.addEventListener("submit", async event => {
     return;
   }
 
+  const sourceExtension = getFilenameExtension(selectedFile.name);
+  if (!sourceExtension || !ALLOWED_EXTENSIONS.has(sourceExtension)) {
+    setStatus("Filename must end with .jpg, .jpeg, .png, .webp, or .gif.", "error");
+    return;
+  }
+
   if (selectedFile.size <= 0 || selectedFile.size > MAX_SOURCE_BYTES) {
     setStatus("Image must be between 1 byte and 25 MB.", "error");
     return;
@@ -79,6 +87,7 @@ uploadForm.addEventListener("submit", async event => {
 
     const response = await fetch(UPLOAD_ENDPOINT, {
       method: "POST",
+      credentials: "include",
       headers: {
         Authorization: `Bearer ${token}`
       },
@@ -87,7 +96,7 @@ uploadForm.addEventListener("submit", async event => {
 
     const payload = await readJson(response);
     if (!response.ok || !payload?.ok || typeof payload.url !== "string") {
-      throw new Error(payload?.message || "Upload failed.");
+      throw new Error(getUploadErrorMessage(response, payload));
     }
 
     resultUrl.value = payload.url;
@@ -222,6 +231,33 @@ function formatBytes(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 }
 
+function getFilenameExtension(filename) {
+  const baseName = filename.split(/[/\\]/).pop() ?? "";
+  const lastDot = baseName.lastIndexOf(".");
+  if (lastDot <= 0 || lastDot === baseName.length - 1) {
+    return null;
+  }
+
+  return baseName.slice(lastDot + 1).toLowerCase();
+}
+
+function getUploadErrorMessage(response, payload) {
+  if (payload?.message && typeof payload.message === "string") {
+    return payload.message;
+  }
+
+  if (response.status === 401 || response.status === 403) {
+    return `Sign in with GitHub at ${ACCESS_SIGN_IN_URL} (open in a new tab), then try again.`;
+  }
+
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    return `Sign in with GitHub at ${ACCESS_SIGN_IN_URL} (open in a new tab), then try again.`;
+  }
+
+  return "Upload failed.";
+}
+
 async function readJson(response) {
   const contentType = response.headers.get("content-type") || "";
   if (contentType.includes("application/json")) {
@@ -229,7 +265,19 @@ async function readJson(response) {
   }
 
   const text = await response.text();
-  return text ? { message: text } : null;
+  if (!text) {
+    return null;
+  }
+
+  if (text.trimStart().startsWith("{")) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { message: text };
+    }
+  }
+
+  return { message: text };
 }
 
 function replaceExtension(filename, extension) {

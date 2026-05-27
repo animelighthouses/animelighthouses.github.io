@@ -59,6 +59,11 @@
         <label class="field">
           <span>Upload token</span>
           <input id="token-input" name="token" placeholder="Paste Bearer token" required />
+          <p class="helper-text">
+            First upload? In Cloudflare Zero Trust, open your Access app for
+            <code>upload.toudai.moe</code> and use <strong>Launch</strong> to sign in with GitHub once, then return here.
+            (A direct visit to <code>upload.toudai.moe</code> may be blocked by WAF if only <code>POST /upload</code> is allowed.)
+          </p>
         </label>
 
         <div class="preview-shell">

@@ -30,3 +30,13 @@ This repo owns the upload page UX and browser-side file preparation.
 The separate `personal-image-host` repo owns backend concerns such as Worker auth rules, storage behavior, response shape, public URL serving, and abuse controls.
 
 This tool is intentionally standalone. It is hosted by the website repo, but it is not a primary site feature and does not need to be linked from the main site navigation.
+
+## Related backend docs
+
+For the canonical backend contract and operations/runbook, see the `personal-image-host` repo:
+
+- `docs/README.md` (documentation index)
+- `docs/setup.md` (end-to-end setup, domains/DNS, Workers, R2)
+- `docs/status.md` (what’s implemented vs remaining)
+- `docs/operations.md` (alerts, monitoring, emergency controls)
+- `docs/integrations.md` (single source of truth for cross-repo contracts)
