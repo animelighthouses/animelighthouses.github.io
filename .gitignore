@@ -2,6 +2,9 @@
 # docs/
 .cursor/
 
+# Local-only codebase review notes (not for GitHub Pages).
+reviews/
+
 # Local backups (npm run backup:images).
 # Keep storage-backup/backup_instructions.md tracked.
 storage-backup/sightings-*.json
