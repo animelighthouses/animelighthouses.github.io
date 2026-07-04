@@ -1,0 +1,96 @@
+.tool-form {
+  display: grid;
+  gap: var(--space-9);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.field span {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.field-optional {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.card-desc {
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-9);
+}
+
+.helper-text {
+  color: var(--text-muted);
+}
+
+.button-row {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.button-row button,
+.copy-row button {
+  cursor: pointer;
+  padding: 0.7rem 1rem;
+}
+
+.status-box {
+  margin-top: var(--space-9);
+  margin-bottom: var(--space-9);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 90%, var(--bg));
+}
+
+.status-box[data-state="success"] {
+  border-color: var(--status-success-border);
+  background: var(--status-success-bg);
+  color: var(--status-success-fg);
+}
+
+.status-box[data-state="error"] {
+  border-color: var(--status-danger-border);
+  background: var(--status-danger-bg);
+  color: var(--status-danger-fg);
+}
+
+.copy-row {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.json-output {
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.85rem;
+  resize: vertical;
+}
+
+.entry-count {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-top: calc(var(--space-4) * -1);
+}
+
+/* Give Card 2 outputs room to breathe between them */
+.card > .field + .field {
+  margin-top: var(--space-9);
+}
+
+/* Download button at the bottom of Card 2 */
+.card > .button-row {
+  margin-top: var(--space-9);
+}
+
+/* Widen the container slightly so long JSON lines wrap less aggressively */
+.container {
+  max-width: 720px;
+}

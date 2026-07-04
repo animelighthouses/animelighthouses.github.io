@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Watch Later Helper | Anime Lighthouse Index</title>
+  <script src="/js/theme-boot.js"></script>
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>Watch Later Helper</h1>
+      <div class="subtitle-bar">
+        <div class="subtitle">
+          <span class="view-link"><a class="view-anchor" href="/">Home</a></span>
+        </div>
+      </div>
+      <p class="helper-text">Convert YouTube links into <code>youtube_watch_later.json</code> entries.</p>
+    </header>
+
+    <!-- Card 1: Single entry -->
+    <section class="card">
+      <h2>Single entry</h2>
+      <p class="helper-text card-desc">Paste a link to get a single formatted JSON object, ready to append to the file manually.</p>
+
+      <form id="single-form" class="tool-form">
+        <label class="field">
+          <span>YouTube URL</span>
+          <input id="single-url" type="url" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off" spellcheck="false" />
+        </label>
+        <div class="button-row">
+          <button id="single-btn" type="submit">Convert</button>
+        </div>
+      </form>
+
+      <div id="single-status" class="status-box" aria-live="polite">Paste a URL and press Convert.</div>
+
+      <label class="field">
+        <span>JSON entry</span>
+        <div class="copy-row">
+          <textarea id="single-output" class="json-output" rows="8" readonly placeholder="Output will appear here..."></textarea>
+          <button type="button" data-copy-target="single-output">Copy</button>
+        </div>
+      </label>
+    </section>
+
+    <!-- Card 2: Batch append -->
+    <section class="card">
+      <h2>Batch append</h2>
+      <p class="helper-text card-desc">Optionally load your existing JSON file to start from, then paste links one at a time to build an updated version for download.</p>
+
+      <div class="tool-form">
+        <label class="field">
+          <span>Load existing JSON file <span class="field-optional">(optional)</span></span>
+          <input id="batch-file" type="file" accept=".json" />
+        </label>
+        <p id="batch-count" class="entry-count" hidden></p>
+
+        <label class="field">
+          <span>YouTube URL</span>
+          <input id="batch-url" type="url" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off" spellcheck="false" />
+        </label>
+        <div class="button-row">
+          <button id="batch-btn" type="button">Add to list</button>
+        </div>
+      </div>
+
+      <div id="batch-status" class="status-box" aria-live="polite">Paste a URL and press Add to list.</div>
+
+      <label class="field">
+        <span>Latest item</span>
+        <div class="copy-row">
+          <textarea id="batch-item-output" class="json-output" rows="8" readonly placeholder="Last added entry will appear here..."></textarea>
+          <button type="button" data-copy-target="batch-item-output">Copy</button>
+        </div>
+      </label>
+
+      <label class="field">
+        <span>Full array</span>
+        <div class="copy-row">
+          <textarea id="batch-array-output" class="json-output" rows="12" readonly placeholder="Full updated array will appear here..."></textarea>
+          <button type="button" data-copy-target="batch-array-output">Copy</button>
+        </div>
+      </label>
+
+      <div class="button-row">
+        <button id="download-btn" type="button" disabled>Download youtube_watch_later.json</button>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+
+</html>
