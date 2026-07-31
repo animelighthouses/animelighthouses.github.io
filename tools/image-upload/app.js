@@ -132,7 +132,8 @@ uploadForm.addEventListener("submit", async event => {
 
     resultUrl.value = payload.url;
     resultMarkdown.value = `img420(${payload.url})`;
-    setStatus(`Uploaded successfully as ${payload.key}.`, "success");
+    const uploadedBytes = typeof payload.bytes === "number" ? payload.bytes : preparedFile.size;
+    setStatus(`Uploaded successfully as ${payload.key} (${formatBytes(uploadedBytes)}).`, "success");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     setStatus(message, "error");
