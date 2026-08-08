@@ -22,7 +22,10 @@ import {
 } from "./lightbox.js";
 import { createImageNavIcon } from "./imageNavIcon.js";
 import { appendFormattedNoteText } from "./noteText.js";
-import { sightingSharePath } from "./sightingLink.js";
+import {
+  anilistSightingMarkdown,
+  sightingSharePath
+} from "./sightingLink.js";
 
 const SVG_VIEW_BOX = "0 -960 960 960";
 
@@ -31,6 +34,52 @@ const MULTI_IMAGE_ICON_PATH =
 
 const DIRECT_LINK_ICON_PATH =
   "M318-120q-82 0-140-58t-58-140q0-40 15-76t43-64l134-133 56 56-134 134q-17 17-25.5 38.5T200-318q0 49 34.5 83.5T318-200q23 0 45-8.5t39-25.5l133-134 57 57-134 133q-28 28-64 43t-76 15Zm79-220-57-57 223-223 57 57-223 223Zm251-28-56-57 134-133q17-17 25-38t8-44q0-50-34-85t-84-35q-23 0-44.5 8.5T558-726L425-592l-57-56 134-134q28-28 64-43t76-15q82 0 139.5 58T839-641q0 39-14.5 75T782-502L648-368Z";
+
+/** Material Symbols "code" glyph (<>). */
+const ANILIST_COPY_ICON_PATH =
+  "M320-240 80-480l240-240 57 57-184 184 183 183-56 56Zm320 0-57-57 184-184-183-183 56-56 240 240-240 240Z";
+
+const ANILIST_COPY_LABEL = "Copy AniList markdown";
+const COPIED_FEEDBACK_MS = 1500;
+
+/**
+ * Copy text for iOS Safari + desktop. Prefer execCommand inside the click
+ * gesture (reliable on iOS); fall back to the Clipboard API when needed.
+ *
+ * @param {string} text
+ * @returns {Promise<boolean>}
+ */
+function copyTextToClipboard(text) {
+  function copyViaExecCommand() {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.setAttribute("aria-hidden", "true");
+    ta.style.cssText =
+      "position:fixed;top:0;left:0;width:1px;height:1px;padding:0;border:0;opacity:0;";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    let ok = false;
+    try {
+      ok = document.execCommand("copy");
+    } catch {
+      ok = false;
+    }
+    ta.remove();
+    return ok;
+  }
+
+  if (copyViaExecCommand()) return Promise.resolve(true);
+  if (window.isSecureContext && navigator.clipboard?.writeText) {
+    return navigator.clipboard.writeText(text).then(
+      () => true,
+      () => false
+    );
+  }
+  return Promise.resolve(false);
+}
 
 /** @param {string} pathD @param {string} svgClass */
 function createCardMaterialIcon(pathD, svgClass) {
@@ -185,14 +234,20 @@ function buildCardImageBlock(entry) {
   return { wrap, controller };
 }
 
-export function buildSightingCard(entry, { titleMode, recentImageSlot = false } = {}) {
+export function buildSightingCard(
+  entry,
+  { titleMode, recentImageSlot = false, anilistCopyAction = false } = {}
+) {
   const card = document.createElement("div");
   card.className = "card";
   if (recentImageSlot) {
     card.classList.add("card--recent");
   }
 
-  // DATE + direct link
+  /** @type {{ getIndex: () => number, urls: string[] } | null} */
+  let imageController = null;
+
+  // DATE + direct link or AniList copy
   const headerRow = document.createElement("div");
   headerRow.className = "card-header-row";
 
@@ -202,22 +257,57 @@ export function buildSightingCard(entry, { titleMode, recentImageSlot = false } 
   headerRow.appendChild(date);
 
   if (entry.id != null && isPositiveSightingId(entry.id)) {
-    const directLink = document.createElement("a");
-    directLink.href = sightingSharePath(entry.id);
-    directLink.className = "card-direct-link";
-    directLink.title = "Direct link";
-    directLink.setAttribute("aria-label", "Direct link");
-    directLink.appendChild(
-      createCardMaterialIcon(DIRECT_LINK_ICON_PATH, "card-direct-link-svg")
-    );
-    headerRow.appendChild(directLink);
+    if (anilistCopyAction) {
+      const copyBtn = document.createElement("button");
+      copyBtn.type = "button";
+      copyBtn.className = "card-direct-link card-anilist-copy";
+      copyBtn.title = ANILIST_COPY_LABEL;
+      copyBtn.setAttribute("aria-label", ANILIST_COPY_LABEL);
+      copyBtn.appendChild(
+        createCardMaterialIcon(ANILIST_COPY_ICON_PATH, "card-direct-link-svg")
+      );
+
+      let copiedTimer = 0;
+      copyBtn.addEventListener("click", () => {
+        if (!imageController?.urls?.length) return;
+        const url = imageController.urls[imageController.getIndex()];
+        if (!url) return;
+        const markdown = anilistSightingMarkdown(url, entry.id);
+
+        copyTextToClipboard(markdown).then(ok => {
+          if (!ok) return;
+          copyBtn.classList.add("is-copied");
+          copyBtn.title = "Copied!";
+          copyBtn.setAttribute("aria-label", "Copied!");
+          window.clearTimeout(copiedTimer);
+          copiedTimer = window.setTimeout(() => {
+            copyBtn.classList.remove("is-copied");
+            copyBtn.title = ANILIST_COPY_LABEL;
+            copyBtn.setAttribute("aria-label", ANILIST_COPY_LABEL);
+          }, COPIED_FEEDBACK_MS);
+        });
+      });
+
+      headerRow.appendChild(copyBtn);
+    } else {
+      const directLink = document.createElement("a");
+      directLink.href = sightingSharePath(entry.id);
+      directLink.className = "card-direct-link";
+      directLink.title = "Direct link";
+      directLink.setAttribute("aria-label", "Direct link");
+      directLink.appendChild(
+        createCardMaterialIcon(DIRECT_LINK_ICON_PATH, "card-direct-link-svg")
+      );
+      headerRow.appendChild(directLink);
+    }
   }
 
   card.appendChild(headerRow);
 
   // IMAGE
   if (entry.image_link?.length) {
-    const { wrap } = buildCardImageBlock(entry);
+    const { wrap, controller } = buildCardImageBlock(entry);
+    imageController = controller;
     card.appendChild(wrap);
   }
 

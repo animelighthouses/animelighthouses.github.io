@@ -57,7 +57,11 @@ function renderCard() {
   closeLightboxIfOpen();
   app.innerHTML = "";
   app.appendChild(
-    buildSightingCard(currentRow, { titleMode, recentImageSlot: true })
+    buildSightingCard(currentRow, {
+      titleMode,
+      recentImageSlot: true,
+      anilistCopyAction: true
+    })
   );
   syncDocumentTitle(currentRow);
 }
