@@ -14,10 +14,11 @@ Stage 1 ──► Stage 2 ──► Stage 3
 End state for AniList:
 
 ```html
-<a href="https://www.toudai.moe/featured_sighting">
+<a href="https://www.toudai.moe/featured">
   <img src="https://<project-ref>.supabase.co/storage/v1/object/public/sightings-images/featured/card.webp" />
 </a>
 ```
+When the featured sighting is changed on toudai.moe, the AniList embedded image changes and the hyperlink redirects to the new featured sighting page.
 
 ---
 
@@ -156,13 +157,23 @@ sightings-images/featured/card.webp   (stable public URL)
 
 ### Card content (v1)
 
-Enough for a readable hotlink thumbnail:
+Enough for a readable hotlink thumbnail. Fields, top to bottom:
 
-- Primary sighting image
-- Title (EN)
-- Date spotted
-- Optional lighthouse name (when real / linked)
-- Light site branding (name or mark)
+1. **Heading** — depends on `sightings.media_type`:
+   - `anime` → "Featured Anime Lighthouse"
+   - `manga` → "Featured Manga Lighthouse"
+   - `other` → "Featured Lighthouse"
+2. **Image** — the first `image_link` entry.
+3. **Title** — `title_r` (romaji). If `episode` is non-empty, show it
+   alongside/below the title (e.g. as a second line), matching the episode
+   display already used on browse cards; omit this line entirely when
+   `episode` is empty.
+4. **Lighthouse name** — only when `lighthouse_type = 'real'` and a
+   `lighthouse_id` is linked. Format identical to the existing browse card
+   (`js/browse/card.js`): `` `${name_en ?? ""} (${name_jp ?? ""})`.trim() ``.
+   Omit this line entirely for fictional/unidentified sightings or when no
+   lighthouse is linked.
+5. **Light site branding** — name or mark.
 
 Exact layout, typography, and size are decided at implementation time; this
 is not a full recreation of the browse-page CSS card.
