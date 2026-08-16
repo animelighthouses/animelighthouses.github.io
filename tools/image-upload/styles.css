@@ -43,12 +43,30 @@
   display: none;
 }
 
+.quality-row {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr) 5.5rem;
+  align-items: center;
+}
+
+#quality-slider {
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+}
+
+#quality-input {
+  width: 100%;
+}
+
 .button-row {
   display: flex;
   gap: var(--space-4);
   flex-wrap: wrap;
 }
 
+#preview-button,
 #upload-button,
 .copy-row button {
   cursor: pointer;

@@ -7,8 +7,15 @@ const UPLOAD_ENDPOINT = "https://upload.toudai.moe/upload";
 const TOKEN_STORAGE_KEY = "toudai-image-upload-token";
 const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
 
-const ALLOWED_EXTENSIONS = new Set(["gif", "jpg", "jpeg", "png", "webp"]);
-const ALLOWED_TYPES = new Set(["image/gif", "image/jpeg", "image/png", "image/webp"]);
+const ALLOWED_EXTENSIONS = new Set(["gif", "jpg", "jpeg", "png", "webp", "heic", "heif"]);
+const ALLOWED_TYPES = new Set([
+  "image/gif",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif"
+]);
 const UPLOAD_HOST_SIGN_IN_HELP =
   "Upload host sign-in opened in a new tab. Close it after login (405 is normal), then upload again.";
 const MIME_TO_EXTENSION = {
@@ -18,13 +25,20 @@ const MIME_TO_EXTENSION = {
   "image/webp": "webp"
 };
 
+const DEFAULT_QUALITY_PERCENT = 90;
+const DEFAULT_ENCODE_QUALITY = DEFAULT_QUALITY_PERCENT / 100;
+
 const fileInput = document.getElementById("file-input");
 const resizeSelect = document.getElementById("resize-select");
 const formatSelect = document.getElementById("format-select");
+const qualityField = document.getElementById("quality-field");
+const qualitySlider = document.getElementById("quality-slider");
+const qualityInput = document.getElementById("quality-input");
 const tokenInput = document.getElementById("token-input");
 const previewImage = document.getElementById("preview-image");
 const previewEmpty = document.getElementById("preview-empty");
 const uploadForm = document.getElementById("upload-form");
+const previewButton = document.getElementById("preview-button");
 const uploadButton = document.getElementById("upload-button");
 const statusBox = document.getElementById("status-box");
 const resultUrl = document.getElementById("result-url");
@@ -35,6 +49,7 @@ const noticeEl = document.getElementById("submitAdminNotice");
 let previewObjectUrl = "";
 
 tokenInput.value = localStorage.getItem(TOKEN_STORAGE_KEY) ?? "";
+hideWebpOutputOnSafari();
 
 document.addEventListener("DOMContentLoaded", async () => {
   async function refreshAuth() {
@@ -51,10 +66,33 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   await refreshAuth();
+  syncQualityVisibility();
+});
+
+formatSelect.addEventListener("change", () => {
+  syncQualityVisibility();
+});
+
+qualitySlider.addEventListener("input", () => {
+  qualityInput.value = qualitySlider.value;
+});
+
+qualityInput.addEventListener("input", () => {
+  const raw = Number.parseInt(qualityInput.value, 10);
+  if (Number.isFinite(raw) && raw >= 1 && raw <= 100) {
+    qualitySlider.value = String(raw);
+  }
+});
+
+qualityInput.addEventListener("change", () => {
+  const percent = readQualityPercent();
+  qualityInput.value = String(percent);
+  qualitySlider.value = String(percent);
 });
 
 fileInput.addEventListener("change", () => {
   const [file] = fileInput.files ?? [];
+  syncOriginalOutputForFile(file ?? null);
   updatePreview(file ?? null);
   if (file) {
     setStatus(`Selected ${file.name} (${formatBytes(file.size)}).`, "idle");
@@ -68,25 +106,11 @@ tokenInput.addEventListener("input", () => {
 uploadForm.addEventListener("submit", async event => {
   event.preventDefault();
 
-  const [selectedFile] = fileInput.files ?? [];
-  if (!selectedFile) {
-    setStatus("Select an image file first.", "error");
-    return;
-  }
-
-  if (!ALLOWED_TYPES.has(selectedFile.type)) {
-    setStatus("Unsupported file type. Use GIF, JPEG, PNG, or WebP.", "error");
-    return;
-  }
-
-  const sourceExtension = getFilenameExtension(selectedFile.name);
-  if (!sourceExtension || !ALLOWED_EXTENSIONS.has(sourceExtension)) {
-    setStatus("Filename must end with .jpg, .jpeg, .png, .webp, or .gif.", "error");
-    return;
-  }
-
-  if (selectedFile.size <= 0 || selectedFile.size > MAX_SOURCE_BYTES) {
-    setStatus("Image must be between 1 byte and 25 MB.", "error");
+  let selectedFile;
+  try {
+    selectedFile = getSelectedSourceFile();
+  } catch (error) {
+    setStatus(error instanceof Error ? error.message : String(error), "error");
     return;
   }
 
@@ -97,13 +121,10 @@ uploadForm.addEventListener("submit", async event => {
   }
 
   try {
-    uploadButton.disabled = true;
+    setEncodeBusy(true);
     setStatus("Preparing image for upload...", "idle");
 
-    const preparedFile = await prepareUploadFile(selectedFile, {
-      maxDimension: resizeSelect.value,
-      outputFormat: formatSelect.value
-    });
+    const { file: preparedFile } = await prepareUploadFile(selectedFile, getEncodeOptions());
 
     setStatus(`Uploading ${preparedFile.name} (${formatBytes(preparedFile.size)})...`, "idle");
 
@@ -138,7 +159,35 @@ uploadForm.addEventListener("submit", async event => {
     const message = error instanceof Error ? error.message : String(error);
     setStatus(message, "error");
   } finally {
-    uploadButton.disabled = false;
+    setEncodeBusy(false);
+  }
+});
+
+previewButton.addEventListener("click", async () => {
+  let selectedFile;
+  try {
+    selectedFile = getSelectedSourceFile();
+  } catch (error) {
+    setStatus(error instanceof Error ? error.message : String(error), "error");
+    return;
+  }
+
+  try {
+    setEncodeBusy(true);
+    setStatus("Preparing preview...", "idle");
+
+    const { file: preparedFile, width, height } = await prepareUploadFile(
+      selectedFile,
+      getEncodeOptions()
+    );
+
+    updatePreview(preparedFile);
+    setStatus(formatPreviewStatus(preparedFile, width, height), "idle");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    setStatus(message, "error");
+  } finally {
+    setEncodeBusy(false);
   }
 });
 
@@ -173,12 +222,17 @@ function openUploadHostSignIn() {
   window.open(UPLOAD_ENDPOINT, "_blank", "noopener,noreferrer");
 }
 
-async function prepareUploadFile(file, { maxDimension, outputFormat }) {
+async function prepareUploadFile(file, { maxDimension, outputFormat, quality }) {
   if (file.type === "image/gif") {
     if (maxDimension !== "original" || outputFormat !== "original") {
       throw new Error("GIF uploads stay original. Leave resize and output as original.");
     }
-    return file;
+    return { file, width: null, height: null };
+  }
+
+  const heic = isHeicFile(file);
+  if (heic && outputFormat === "original") {
+    outputFormat = "jpeg";
   }
 
   const targetMime = resolveTargetMime(file.type, outputFormat);
@@ -188,11 +242,22 @@ async function prepareUploadFile(file, { maxDimension, outputFormat }) {
   }
 
   const maxSide = maxDimension === "original" ? null : Number.parseInt(maxDimension, 10);
-  if (!maxSide && outputFormat === "original") {
-    return file;
+  if (!heic && !maxSide && outputFormat === "original") {
+    return { file, width: null, height: null };
   }
 
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  } catch {
+    if (heic) {
+      throw new Error(
+        "This browser cannot decode HEIC. Convert it to JPEG or PNG first, or open this page in Safari."
+      );
+    }
+    throw new Error("This browser could not decode the selected image.");
+  }
+
   const scale = maxSide ? Math.min(1, maxSide / bitmap.width, maxSide / bitmap.height) : 1;
   const width = Math.max(1, Math.round(bitmap.width * scale));
   const height = Math.max(1, Math.round(bitmap.height * scale));
@@ -208,14 +273,134 @@ async function prepareUploadFile(file, { maxDimension, outputFormat }) {
 
   context.drawImage(bitmap, 0, 0, width, height);
 
-  const quality = targetMime === "image/png" ? undefined : 0.92;
-  const blob = await canvasToBlob(canvas, targetMime, quality);
+  const encodeQuality = targetMime === "image/png"
+    ? undefined
+    : (typeof quality === "number" ? quality : DEFAULT_ENCODE_QUALITY);
+  const blob = await canvasToBlob(canvas, targetMime, encodeQuality);
   const outputName = replaceExtension(file.name, targetExtension);
 
-  return new File([blob], outputName, {
-    lastModified: Date.now(),
-    type: targetMime
-  });
+  return {
+    file: new File([blob], outputName, {
+      lastModified: Date.now(),
+      type: targetMime
+    }),
+    width,
+    height
+  };
+}
+
+function getSelectedSourceFile() {
+  const [selectedFile] = fileInput.files ?? [];
+  if (!selectedFile) {
+    throw new Error("Select an image file first.");
+  }
+
+  if (!ALLOWED_TYPES.has(selectedFile.type) && !isHeicFile(selectedFile)) {
+    throw new Error("Unsupported file type. Use GIF, JPEG, PNG, WebP, or HEIC.");
+  }
+
+  const sourceExtension = getFilenameExtension(selectedFile.name);
+  if (!sourceExtension || !ALLOWED_EXTENSIONS.has(sourceExtension)) {
+    throw new Error("Filename must end with .jpg, .jpeg, .png, .webp, .gif, .heic, or .heif.");
+  }
+
+  if (selectedFile.size <= 0 || selectedFile.size > MAX_SOURCE_BYTES) {
+    throw new Error("Image must be between 1 byte and 25 MB.");
+  }
+
+  return selectedFile;
+}
+
+function isHeicFile(file) {
+  const extension = getFilenameExtension(file.name);
+  return (
+    file.type === "image/heic" ||
+    file.type === "image/heif" ||
+    extension === "heic" ||
+    extension === "heif"
+  );
+}
+
+function syncOriginalOutputForFile(file) {
+  const originalOption = formatSelect.querySelector('option[value="original"]');
+  if (!originalOption) {
+    return;
+  }
+
+  const heic = Boolean(file && isHeicFile(file));
+  originalOption.disabled = heic;
+  if (heic && formatSelect.value === "original") {
+    formatSelect.value = "jpeg";
+  }
+
+  syncQualityVisibility();
+}
+
+function isSafariBrowser() {
+  const ua = navigator.userAgent;
+  return /safari/i.test(ua) && !/chrome|chromium|crios|android/i.test(ua);
+}
+
+function hideWebpOutputOnSafari() {
+  if (!isSafariBrowser()) {
+    return;
+  }
+
+  formatSelect.querySelector('option[value="webp"]')?.remove();
+}
+
+function isLossyOutput(format) {
+  return format === "jpeg" || format === "webp";
+}
+
+function syncQualityVisibility() {
+  qualityField.classList.toggle("hidden", !isLossyOutput(formatSelect.value));
+}
+
+function readQualityPercent() {
+  const raw = Number.parseInt(qualityInput.value, 10);
+  if (!Number.isFinite(raw)) {
+    return DEFAULT_QUALITY_PERCENT;
+  }
+
+  return Math.min(100, Math.max(1, raw));
+}
+
+function getEncodeOptions() {
+  const outputFormat = formatSelect.value;
+  const options = {
+    maxDimension: resizeSelect.value,
+    outputFormat
+  };
+
+  if (isLossyOutput(outputFormat)) {
+    options.quality = readQualityPercent() / 100;
+  }
+
+  return options;
+}
+
+function setEncodeBusy(busy) {
+  previewButton.disabled = busy;
+  uploadButton.disabled = busy;
+}
+
+function mimeLabel(mime) {
+  if (mime === "image/jpeg") return "JPEG";
+  if (mime === "image/png") return "PNG";
+  if (mime === "image/webp") return "WebP";
+  if (mime === "image/gif") return "GIF";
+  return mime;
+}
+
+function formatPreviewStatus(file, width, height) {
+  const size = formatBytes(file.size);
+  const formatName = mimeLabel(file.type);
+  if (width && height) {
+    return `Preview ${width}×${height} ${formatName}, ${size}.`;
+  }
+
+  return `Preview ${formatName}, ${size}.`;
 }
 
 function resolveTargetMime(sourceMime, outputFormat) {
