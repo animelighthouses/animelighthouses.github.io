@@ -136,11 +136,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     clearBtn: "traceMoeClearBtn"
   });
 
-  function resetTraceUi() {
-    traceUi.reset();
+  function updateTraceEnabled() {
     const hasImage = Boolean(getStoredImageUrl());
     if (traceBtn) traceBtn.disabled = !hasImage;
-    if (selectedRow && !hasImage) {
+  }
+
+  function resetTraceUi() {
+    traceUi.reset();
+    updateTraceEnabled();
+    if (selectedRow && !getStoredImageUrl()) {
       traceUi.setStatus("No stored image — use Edit images to add one.", "warn");
     }
   }
@@ -214,7 +218,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       traceUi.setStatus(`Lookup failed: ${err?.message ?? "unknown error"}.`, "fail");
       traceUi.showClearBtn();
     } finally {
-      resetTraceUi();
+      updateTraceEnabled();
     }
   });
 

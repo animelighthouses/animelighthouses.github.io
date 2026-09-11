@@ -292,12 +292,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     clearBtn: "traceMoeClearBtn"
   });
 
-  function resetTraceUi() {
-    traceUi.reset();
+  function updateTraceEnabled() {
     const src = getActiveImageSource();
     const hasSource = src.kind === "file" ? Boolean(src.file) : Boolean(src.url);
     if (traceBtn) traceBtn.disabled = !(imageSourceMode === "upload" && hasSource);
     if (traceUrlBtn) traceUrlBtn.disabled = !(imageSourceMode === "url" && hasSource);
+  }
+
+  function resetTraceUi() {
+    traceUi.reset();
+    updateTraceEnabled();
   }
 
   /**
@@ -375,7 +379,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       traceUi.setStatus(`Lookup failed: ${err?.message ?? "unknown error"}.`, "fail");
       traceUi.showClearBtn();
     } finally {
-      resetTraceUi();
+      updateTraceEnabled();
     }
   }
 
