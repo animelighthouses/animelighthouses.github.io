@@ -34,19 +34,22 @@ function buildDiscordContent(record: Record<string, unknown>) {
   const id = String(record.id);
   const username = String(record.username ?? "").trim();
   const anilist = String(record.anilist_link ?? "").trim();
-  const hasImage = Boolean(String(record.image_url ?? "").trim());
+  const imageUrl = String(record.image_url ?? "").trim();
   const enrichment = record.enrichment as Record<string, unknown> | undefined;
   const anilistEnrich = enrichment?.anilist as Record<string, unknown> | undefined;
   const titleEn = String(anilistEnrich?.title_en ?? "").trim();
-  const notes = truncate(String(record.notes ?? ""), 120);
+  // Keep notes; Discord content cap is ~2000 chars total (we slice at end).
+  const notes = truncate(String(record.notes ?? ""), 800);
 
   const lines = [`**New submission #${id}**`];
   if (titleEn) lines.push(`Title: ${titleEn}`);
   if (username) lines.push(`User: ${username}`);
-  if (anilist) lines.push(`AniList: ${anilist}`);
-  lines.push(`Image URL: ${hasImage ? "yes" : "no"}`);
+  // Wrap URLs in <> so Discord does not generate link embeds.
+  if (anilist) lines.push(`AniList: <${anilist}>`);
+  if (imageUrl) lines.push(`Image: <${imageUrl}>`);
+  else lines.push("Image: (none)");
   if (notes) lines.push(`Notes: ${notes}`);
-  lines.push(`[Open review](${SITE_BASE_URL}/review?id=${encodeURIComponent(id)})`);
+  lines.push(`[Open review](<${SITE_BASE_URL}/review?id=${encodeURIComponent(id)}>)`);
 
   return lines.join("\n").slice(0, 1900);
 }
