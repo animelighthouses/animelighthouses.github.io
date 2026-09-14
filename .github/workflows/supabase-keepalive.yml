@@ -1,8 +1,8 @@
 # Keeps the free-tier Supabase project from auto-pausing after ~7 days
 # of low database activity. Needs a real authenticated REST query (not 401).
 #
-# Uses the legacy anon JWT — PostgREST rejects the newer sb_publishable_ key
-# on raw curl. Same key type as Project Settings → API → anon (legacy).
+# Uses the publishable key on the apikey header only — do not put
+# sb_publishable_… in Authorization: Bearer (it is not a JWT).
 
 name: Supabase Keep-Alive
 
@@ -18,13 +18,12 @@ jobs:
       - name: Ping Supabase REST API
         env:
           SUPABASE_URL: https://ogningqqgxhwkmozikmu.supabase.co
-          # Legacy anon JWT (public by design; RLS is the security boundary)
-          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nbmluZ3FxZ3hod2ttb3ppa211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0ODAyMjUsImV4cCI6MjA5MzA1NjIyNX0.pezJmVLK3KEFGvorBStOt-eykwkpmyfnP_7omGxUmEI
+          # Same publishable key as js/supabaseClient.js (public; RLS is the boundary)
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_Q9SEFHhKlsG05lL4dmrSqw_hwbvmEAB
         run: |
           code=$(curl -sS -o /tmp/keepalive.json -w "%{http_code}" \
             "${SUPABASE_URL}/rest/v1/lighthouses?select=id&limit=1" \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "apikey: ${SUPABASE_PUBLISHABLE_KEY}" \
             -H "Accept: application/json")
           echo "HTTP ${code}"
           if [ "${code}" -lt 200 ] || [ "${code}" -ge 300 ]; then
